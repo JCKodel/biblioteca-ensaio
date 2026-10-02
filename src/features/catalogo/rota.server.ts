@@ -1,12 +1,12 @@
 import type { DatabaseSync } from "node:sqlite";
 import { type Context, Hono } from "hono";
+import type { BancoDeDadosFalhou } from "../../lib/consultar.server.ts";
 import {
 	cadastroDeExemplarPedido,
 	cadastroDeLivroPedido,
 } from "./eventosDeCatalogo.ts";
 import type { CadastroDeLivroPedido } from "./regras.ts";
 import {
-	type BancoDeDadosFalhou,
 	buscarLivro,
 	inserirExemplar,
 	inserirLivro,

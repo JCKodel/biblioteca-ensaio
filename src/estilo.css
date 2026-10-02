@@ -37,15 +37,39 @@ body {
 	padding: var(--margem);
 }
 
-.cabecalho__titulo,
+.cabecalho__faixa,
 .conteudo {
 	max-width: var(--largura-maxima);
 	margin: 0 auto;
 }
 
+/* O título à esquerda e os links à direita; abaixo de 600px, os links descem
+   para baixo do título. */
+.cabecalho__faixa {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--margem);
+}
+
 .cabecalho__titulo {
 	font-size: 1.5rem;
 	line-height: 1.25;
+	margin: 0;
+}
+
+.navegacao {
+	display: flex;
+	gap: var(--margem);
+}
+
+.navegacao__link {
+	color: var(--cor-do-texto-no-destaque);
+	text-decoration: none;
+}
+
+.navegacao__link[aria-current="page"] {
+	text-decoration: underline;
 }
 
 /* A margem fica por fora da largura máxima, para o conteúdo alinhar com o
@@ -97,18 +121,21 @@ body {
 	color: var(--cor-do-aviso);
 }
 
-.catalogo__titulo {
+.catalogo__titulo,
+.membros__titulo {
 	font-size: 1.25rem;
 	margin: calc(var(--margem) * 2) 0 var(--espaco);
 }
 
-.livros {
+.livros,
+.membros__lista {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-.livro {
+.livro,
+.membro {
 	display: flex;
 	align-items: center;
 	gap: var(--margem);
@@ -116,7 +143,8 @@ body {
 	border-bottom: 1px solid var(--cor-da-divisoria);
 }
 
-.livro__texto {
+.livro__texto,
+.membro__texto {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
@@ -124,13 +152,17 @@ body {
 	overflow-wrap: anywhere;
 }
 
-.livro__titulo {
+.livro__titulo,
+.membro__nome {
 	font-weight: 600;
 }
 
-/* Abaixo de 600px o botão desce para baixo do texto (docs/04 §Estilo visual). */
+/* Abaixo de 600px o botão desce para baixo do texto, e os links do cabeçalho
+   para baixo do título (docs/04 §Estilo visual). */
 @media (max-width: 600px) {
-	.livro {
+	.cabecalho__faixa,
+	.livro,
+	.membro {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: var(--espaco);

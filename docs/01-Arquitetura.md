@@ -45,11 +45,23 @@ src/features/catalogo/    livros e exemplares
 src/lib/                  o que não pertence a nenhuma feature, no segundo uso
 ```
 
+Em `src/lib/`, cada arquivo diz num comentário onde estão o primeiro e o segundo uso:
+
+| Arquivo | O que guarda | Primeiro uso | Segundo uso |
+|---|---|---|---|
+| `result.ts` | `Result`, `ok`, `err` | `features/catalogo` (`validarLivro` e o repositório) | `features/membros/regras.ts` (`cadastrar`) |
+| `consultar.server.ts` | `consultar`, `BancoDeDadosFalhou` | o repositório do catálogo | o repositório dos membros |
+| `estadoDe.ts` | `estadoDe`, que separa uma recusa (string) de uma falha (objeto com `codigo`) | `cadastroDeExemplarPedido` | `suspensaoPedida` |
+| `chamar.ts` | `chamar` e `Resposta`, a borda do cliente com a rede: um servidor que não responde ou uma resposta que não é JSON vira `null` | `useCatalogo` | `useMembros` |
+| `mensagemDeFalha.ts` | `MENSAGEM_DE_FALHA`, a frase de `Falhou` do docs/03; sem I/O, porque `regras.ts` é puro e o servidor o importa | `catalogo/regras.ts` | `membros/regras.ts` |
+
+Ficam em cada arquivo de teste `naoEsperado` e `falsos` (este, tipado pelos repositórios de cada fatia), como no capítulo 8 do livro.
+
 Numa fatia, cada arquivo é uma peça:
 
 * `TelaDe<X>.tsx`: a **tela**, no cliente.
 * `eventosDe<X>.ts`: o **orquestrador** do servidor. O handler da rota chama um orquestrador **síncrono**, como no capítulo 7: `emprestimoPedido(evento, hoje, repositorios)`, com `RepositoriosDeEmprestimo` obrigatório, e `estadoDe` para separar um `Recusado` de um `Falhou`.
-* `use<X>.ts`: o **orquestrador** do cliente, ao lado de `eventosDe<X>.ts`. É um hook React (`useCatalogo`) que chama as rotas com `fetch` e `await`, recarrega o que mostra depois de cada evento e publica o estado que a tela renderiza.
+* `use<X>.ts`: o **orquestrador** do cliente, ao lado de `eventosDe<X>.ts`. É um hook React (`useCatalogo`, `useMembros`) que chama as rotas com `chamar` (`src/lib/chamar.ts`, sobre o `fetch`) e `await`, recarrega o que mostra depois de cada evento e publica o estado que a tela renderiza.
 * `regras.ts`: os **casos de uso**, funções puras e síncronas. O servidor impõe `emprestar`; o cliente importa `podePegarEmprestado` só para decidir o que mostrar.
 * `repositorio.server.ts`: o **repositório**, que recebe o `db`: `buscarMembro(db, id)`.
 * `rota.server.ts`: a rota Hono, que lê o relógio uma vez, monta os repositórios fechando sobre o `db` e chama o orquestrador.
@@ -77,7 +89,7 @@ Exceções como valores (capítulo 5 do livro):
 * **Exceção:** uma falha de fora, capturada em `consultar(executar)`, o único `try`/`catch` perto do banco, e devolvida como `BancoDeDadosFalhou { codigo, mensagem }`. A violação do índice único de empréstimo aberto vira a recusa `JaEmprestado`; qualquer outra falha continua `BancoDeDadosFalhou`. A `mensagem` vai para o log antes de o servidor responder.
 * **Erro:** um bug, nunca capturado.
 * `throw` nunca conduz fluxo. Toda recusa tem a sua mensagem num `Record` sobre o tipo, então uma recusa nova sem mensagem não compila.
-* `Result`, `ok` e `err` nascem na primeira fatia que os usa e vão para `src/lib/result.ts` no segundo uso.
+* `Result`, `ok` e `err` estão em `src/lib/result.ts`, e `consultar` e `BancoDeDadosFalhou` em `src/lib/consultar.server.ts`: nasceram no catálogo e vieram para `src/lib/` no segundo uso, os membros.
 
 ## Ambientes
 

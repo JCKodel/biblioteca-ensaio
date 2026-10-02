@@ -1,31 +1,15 @@
 import type { DatabaseSync } from "node:sqlite";
+import {
+	type BancoDeDadosFalhou,
+	consultar,
+} from "../../lib/consultar.server.ts";
+import { err, ok, type Result } from "../../lib/result.ts";
 import type {
 	DadosDoLivro,
 	Exemplar,
 	Livro,
 	LivroDoCatalogo,
 } from "./regras.ts";
-import { err, ok, type Result } from "./result.ts";
-
-// Primeira ocorrência concreta de `consultar` e `BancoDeDadosFalhou`: este
-// repositório, o único que os usa. A segunda deve ser membros, que os move
-// para src/lib/consultar.server.ts e diz que a primeira foi esta. Como no
-// capítulo 5 do livro.
-export type BancoDeDadosFalhou = {
-	codigo: "BancoDeDadosFalhou";
-	mensagem: string;
-};
-
-/** O único `try`/`catch` perto do banco: a exceção do SQLite vira um valor. */
-export function consultar<T>(executar: () => T): Result<T, BancoDeDadosFalhou> {
-	try {
-		return ok(executar());
-	} catch (lancado) {
-		const mensagem =
-			lancado instanceof Error ? lancado.message : String(lancado);
-		return err({ codigo: "BancoDeDadosFalhou", mensagem });
-	}
-}
 
 /** Os repositórios que os orquestradores recebem, com o `db` já fechado pela rota. */
 export type RepositoriosDoCatalogo = {

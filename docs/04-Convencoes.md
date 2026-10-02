@@ -24,7 +24,7 @@
 
 ## Estilo visual
 
-Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` (o cabeçalho), `work/done/catalogo-390.png` e `work/done/catalogo-1280.png` (um formulário e uma lista) e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
+Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` (o cabeçalho, ainda sem os links), `work/done/catalogo-390.png` e `work/done/catalogo-1280.png` (um formulário e uma lista), `work/done/membros-390.png` e `work/done/membros-1280.png` (o cabeçalho com os links, e uma lista com o botão de cada linha) e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
 
 | Variável | Valor |
 |---|---|
@@ -42,7 +42,7 @@ Não há arquivo de design. A referência são as capturas `work/done/esqueleto-
 | `--raio` | `4px`, o canto de campos e botões |
 | `--largura-do-formulario` | `480px`, a largura máxima de um formulário |
 
-O título do cabeçalho tem `1.5rem`; o título de uma seção (`h2`), `1.25rem`. Um formulário tem os campos um abaixo do outro, com o rótulo acima; um botão tem o fundo `--cor-de-destaque` e o texto `--cor-do-texto-no-destaque`. Uma lista é feita de linhas simples, separadas por `--cor-da-divisoria`, com o botão da linha à direita; abaixo de `600px` de largura (um valor fixo, porque uma media query não lê variável) o botão desce para baixo do texto. Sem modo escuro, ícone nem fonte da web.
+O cabeçalho tem os links das telas ("Catálogo", "Membros") num `<nav>` na faixa de destaque, à direita do título, com o texto `--cor-do-texto-no-destaque`, sem sublinhado, e o da tela aberta (`aria-current="page"`) sublinhado; abaixo de `600px` eles descem para baixo do título. O título do cabeçalho tem `1.5rem`; o título de uma seção (`h2`), `1.25rem`. Um formulário tem os campos um abaixo do outro, com o rótulo acima; um botão tem o fundo `--cor-de-destaque` e o texto `--cor-do-texto-no-destaque`. Uma lista é feita de linhas simples, separadas por `--cor-da-divisoria`, com o botão da linha à direita; abaixo de `600px` de largura (um valor fixo, porque uma media query não lê variável) o botão desce para baixo do texto. Sem modo escuro, ícone nem fonte da web.
 
 ## Testes
 
