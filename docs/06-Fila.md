@@ -12,5 +12,5 @@ um membro com um livro atrasado ou com a inscrição suspensa é recusado.
 [x] membros          a bibliotecária cadastra, suspende e reativa membros
 [x] emprestar-livro  a bibliotecária empresta um exemplar, e as regras podem recusar
 [x] devolver-livro   a bibliotecária registra uma devolução, e o exemplar fica livre
-[ ] m1-review        o marco conferido contra o parágrafo dele
+[x] m1-review        o marco conferido contra o parágrafo dele
 ```
