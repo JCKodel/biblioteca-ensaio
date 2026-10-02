@@ -96,3 +96,18 @@ export function listarLivros(
 		}));
 	});
 }
+
+/**
+ * Os repositórios do catálogo, fechados sobre o `db`. Primeiro uso: a rota do
+ * catálogo, que os montava por dentro. Segundo: a carga dos dados de exemplo
+ * (dadosDeExemplo/carregar.server.ts), que os trouxe para cá.
+ */
+export function repositoriosDoCatalogo(
+	db: DatabaseSync,
+): RepositoriosDoCatalogo {
+	return {
+		inserirLivro: (dados) => inserirLivro(db, dados),
+		buscarLivro: (id) => buscarLivro(db, id),
+		inserirExemplar: (livroId) => inserirExemplar(db, livroId),
+	};
+}

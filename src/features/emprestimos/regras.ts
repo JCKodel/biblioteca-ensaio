@@ -1,5 +1,6 @@
 import { MENSAGEM_DE_FALHA } from "../../lib/mensagemDeFalha.ts";
 import { err, ok, type Result } from "../../lib/result.ts";
+import { somarDias } from "../../lib/somarDias.ts";
 import type { Exemplar } from "../catalogo/regras.ts";
 import type { Membro } from "../membros/regras.ts";
 
@@ -43,9 +44,7 @@ export type MembroDoEmprestimo = {
 export const DIAS_DE_EMPRESTIMO = 21;
 
 export function dataDeDevolucao(hoje: string): string {
-	const devolucao = new Date(hoje);
-	devolucao.setUTCDate(devolucao.getUTCDate() + DIAS_DE_EMPRESTIMO);
-	return devolucao.toISOString().slice(0, 10);
+	return somarDias(hoje, DIAS_DE_EMPRESTIMO);
 }
 
 /** A suspensão antes do atraso: devolver os livros não basta a um suspenso. */

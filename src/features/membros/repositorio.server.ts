@@ -70,3 +70,15 @@ export function definirSuspenso(
 	if (!linha.value) return err("NaoEncontrado");
 	return ok(paraMembro(linha.value));
 }
+
+/**
+ * Os repositórios dos membros, fechados sobre o `db`. Primeiro uso: a rota dos
+ * membros, que os montava por dentro. Segundo: a carga dos dados de exemplo
+ * (dadosDeExemplo/carregar.server.ts), que os trouxe para cá.
+ */
+export function repositoriosDeMembros(db: DatabaseSync): RepositoriosDeMembros {
+	return {
+		inserirMembro: (dados) => inserirMembro(db, dados),
+		definirSuspenso: (id, suspenso) => definirSuspenso(db, id, suspenso),
+	};
+}

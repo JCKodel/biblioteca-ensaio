@@ -6,6 +6,8 @@ import {
 import { err, ok, type Result } from "../../lib/result.ts";
 import type { Exemplar } from "../catalogo/regras.ts";
 import type { Membro } from "../membros/regras.ts";
+import type { RepositoriosDeDevolucao } from "./devolucao/eventosDeDevolucao.ts";
+import type { RepositoriosDeEmprestimo } from "./eventosDeEmprestimo.ts";
 import type {
 	Emprestimo,
 	EmprestimoAberto,
@@ -247,4 +249,32 @@ export function registrarDevolucao(
 	if (!mudadas.ok) return mudadas;
 	if (Number(mudadas.value) === 0) return err("JaDevolvido");
 	return ok(emprestimo);
+}
+
+// Os montadores fecham os repositórios sobre o `db` (e o `hoje`, quando a
+// leitura depende do dia). Primeiro uso: a rota do empréstimo, que os montava
+// por dentro. Segundo: a carga dos dados de exemplo
+// (dadosDeExemplo/carregar.server.ts), que os trouxe para cá.
+
+/** Os repositórios do empréstimo, fechados sobre o `db` e o `hoje` de um pedido. */
+export function repositoriosDeEmprestimo(
+	db: DatabaseSync,
+	hoje: string,
+): RepositoriosDeEmprestimo {
+	return {
+		buscarMembro: (id) => buscarMembro(db, id, hoje),
+		buscarExemplar: (id) => buscarExemplar(db, id),
+		inserirEmprestimo: (emprestimo) => inserirEmprestimo(db, emprestimo),
+	};
+}
+
+/** Os repositórios da devolução, que não leem `hoje`: a regra `devolver` o põe no `Emprestimo`. */
+export function repositoriosDeDevolucao(
+	db: DatabaseSync,
+): RepositoriosDeDevolucao {
+	return {
+		buscarEmprestimo: (exemplarId, membroId) =>
+			buscarEmprestimo(db, exemplarId, membroId),
+		registrarDevolucao: (emprestimo) => registrarDevolucao(db, emprestimo),
+	};
 }

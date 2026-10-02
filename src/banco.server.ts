@@ -1,6 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import type { DatabaseSync } from "node:sqlite";
+import { mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 export type Migracao = { numero: number; nome: string; sql: string };
 
@@ -77,4 +77,22 @@ export function aplicarMigracoes(
 		aplicadas.push(migracao.nome);
 	}
 	return aplicadas;
+}
+
+/**
+ * Abre o banco e aplica as migrações pendentes de `migracoes/`. `banco` é um
+ * caminho relativo a `raiz`, cuja pasta é criada se faltar, ou `:memory:`.
+ * Primeiro uso: a raiz de composição do servidor (`iniciar.server.ts`), que
+ * fazia isto por dentro. Segundo: o comando dos dados de exemplo
+ * (scripts/dadosDeExemplo.ts), que o trouxe para cá.
+ */
+export function abrirBanco(raiz: string, banco: string): DatabaseSync {
+	let caminho = banco;
+	if (banco !== ":memory:") {
+		caminho = resolve(raiz, banco);
+		mkdirSync(dirname(caminho), { recursive: true });
+	}
+	const db = new DatabaseSync(caminho);
+	aplicarMigracoes(db, lerMigracoes(join(raiz, "migracoes")));
+	return db;
 }

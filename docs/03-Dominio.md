@@ -20,7 +20,7 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | bibliotecário | (a pessoa no balcão) | Quem usa o app: cadastra, empresta e registra devoluções. |
 | prazo de empréstimo | `DIAS_DE_EMPRESTIMO = 21` | Quantos dias um membro fica com um exemplar. Este é o único lugar onde o número é escrito. |
 | data de devolução | `dataDeDevolucao(hoje)`; campo `devolverEm` | A data até a qual o exemplar volta: o dia do empréstimo mais o prazo de empréstimo. |
-| hoje | `hoje`; lido por `lerHoje(xHoje, relogioDeTeste)` | A data do dia, `YYYY-MM-DD`, lida do relógio uma vez onde a requisição chega e passada como valor. É a data local da máquina do servidor, a do balcão, e não a de Greenwich. |
+| hoje | `hoje`; lido por `dataLocal()`, que `lerHoje(xHoje, relogioDeTeste)` chama | A data do dia, `YYYY-MM-DD`, lida do relógio uma vez onde a requisição chega, ou uma vez por rodada do comando dos dados de exemplo, e passada como valor. É a data local da máquina do servidor, a do balcão, e não a de Greenwich. |
 | relógio de teste | variável de ambiente `RELOGIO_DE_TESTE=cabecalho`; cabeçalho `x-hoje`; cabeçalho inválido, `HojeInvalido` | Só no e2e: com a variável ligada na partida do servidor, o cabeçalho `x-hoje: AAAA-MM-DD` dá o `hoje` daquela requisição, e uma data inválida nele é `HojeInvalido` (`400`). Sem a variável, o cabeçalho é ignorado. Nenhuma regra sabe dele. |
 | livros em atraso | `emAtraso` | Quantos empréstimos abertos do membro têm `devolverEm` anterior a `hoje`. |
 | suspenso | `suspenso` | O membro está com a inscrição suspensa e não pode pegar emprestado até ser reativado. |
@@ -66,6 +66,10 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | orquestradores dos membros | `cadastroDeMembroPedido(evento, repositorios)`, `suspensaoPedida(evento, repositorios)` | Transformam cada pedido em um `EstadoDoCadastroDeMembro` ou um `EstadoDaSuspensao`. |
 | estados dos membros | `EstadoDoCadastroDeMembro`, campo `tipo`: `Cadastrado` \| `Recusado` \| `Falhou`; `EstadoDaSuspensao`, campo `tipo`: `Alterado` \| `Recusado` \| `Falhou` | O que cada orquestrador dos membros publica depois de um pedido. |
 | repositórios dos membros | `RepositoriosDeMembros`: `inserirMembro`, `definirSuspenso`; e `listarMembros` | As funções de gravação e de leitura do cadastro de membros. |
+| dados de exemplo | o comando `npm run dados-de-exemplo`; a pasta `src/dadosDeExemplo/`; `carregarDadosDeExemplo(db, hoje, opcoes, plano)` | Um conjunto fixo de livros, exemplares, membros e empréstimos dos últimos 90 dias, carregado no banco local para demonstração e para o curso. Passa pelas mesmas regras que o balcão. |
+| empréstimo do plano | `EmprestimoDoPlano`, `{ exemplar, membro, emprestadoHaDias, devolvidoHaDias }`; `planejarEmprestimos()` | Um empréstimo dos dados de exemplo, escrito em dias antes de `hoje`, com o exemplar e o membro pela ordem de cadastro (1 é o primeiro). `devolvidoHaDias` é `null` num empréstimo que fica aberto. |
+| situação de um empréstimo | `SituacaoDoEmprestimo = "DevolvidoNoPrazo" \| "DevolvidoComAtraso" \| "AbertoNoPrazo" \| "AbertoAtrasado"`; `situacaoDoEmprestimo(emprestimo, hoje)` | Devolvido no prazo: `devolvidoEm` até `devolverEm`, inclusive; com atraso: depois. Aberto atrasado: `devolverEm` anterior a `hoje`, como em `emAtraso`; um empréstimo aberto que vence hoje está no prazo. |
+| somar dias | `somarDias(data, dias)` | A data `YYYY-MM-DD` deslocada de `dias` dias (negativo volta), sem ler o relógio. `dataDeDevolucao(hoje)` é `somarDias(hoje, DIAS_DE_EMPRESTIMO)`. |
 
 ## Mensagens ao usuário
 

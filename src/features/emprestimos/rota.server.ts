@@ -1,35 +1,19 @@
 import type { DatabaseSync } from "node:sqlite";
 import { type Context, Hono } from "hono";
+import { dataLocal } from "../../lib/dataLocal.ts";
 import { falhou } from "../../lib/falhou.server.ts";
 import { err, ok, type Result } from "../../lib/result.ts";
+import { devolucaoPedida } from "./devolucao/eventosDeDevolucao.ts";
+import { emprestimoPedido } from "./eventosDeEmprestimo.ts";
 import {
-	devolucaoPedida,
-	type RepositoriosDeDevolucao,
-} from "./devolucao/eventosDeDevolucao.ts";
-import {
-	emprestimoPedido,
-	type RepositoriosDeEmprestimo,
-} from "./eventosDeEmprestimo.ts";
-import {
-	buscarEmprestimo,
-	buscarExemplar,
-	buscarMembro,
-	inserirEmprestimo,
 	listarEmprestimosAbertos,
 	listarExemplaresDisponiveis,
 	listarMembrosDoEmprestimo,
-	registrarDevolucao,
+	repositoriosDeDevolucao,
+	repositoriosDeEmprestimo,
 } from "./repositorio.server.ts";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
-
-/** A data local da máquina, a do balcão; `toISOString` daria a de Greenwich. */
-function dataLocal(): string {
-	const agora = new Date();
-	const mes = String(agora.getMonth() + 1).padStart(2, "0");
-	const dia = String(agora.getDate()).padStart(2, "0");
-	return `${agora.getFullYear()}-${mes}-${dia}`;
-}
 
 /**
  * O relógio, lido uma vez onde a requisição chega. Desligado, ignora `xHoje`.
@@ -109,15 +93,10 @@ export function rotaDeEmprestimos(
 		if (!hoje.ok) return c.json({ falha: hoje.error }, 400);
 		// O `hoje` muda a cada requisição, então os repositórios são montados
 		// aqui, fechando sobre o `db` e esse `hoje`.
-		const repositorios: RepositoriosDeEmprestimo = {
-			buscarMembro: (id) => buscarMembro(db, id, hoje.value),
-			buscarExemplar: (id) => buscarExemplar(db, id),
-			inserirEmprestimo: (emprestimo) => inserirEmprestimo(db, emprestimo),
-		};
 		const estado = emprestimoPedido(
 			await lerPedido(c),
 			hoje.value,
-			repositorios,
+			repositoriosDeEmprestimo(db, hoje.value),
 		);
 		if (estado.tipo === "Emprestado") return c.json(estado.emprestimo, 201);
 		if (estado.tipo === "Recusado") {
@@ -129,11 +108,7 @@ export function rotaDeEmprestimos(
 
 	// A devolução não lê `hoje` nos repositórios (a regra o põe no
 	// `Emprestimo`), então eles são montados uma vez, fechando sobre o `db`.
-	const repositoriosDeDevolucao: RepositoriosDeDevolucao = {
-		buscarEmprestimo: (exemplarId, membroId) =>
-			buscarEmprestimo(db, exemplarId, membroId),
-		registrarDevolucao: (emprestimo) => registrarDevolucao(db, emprestimo),
-	};
+	const repositoriosDaDevolucao = repositoriosDeDevolucao(db);
 
 	rota.post("/devolucao", async (c) => {
 		const hoje = lerHoje(c.req.header("x-hoje"), relogioDeTeste);
@@ -141,7 +116,7 @@ export function rotaDeEmprestimos(
 		const estado = devolucaoPedida(
 			await lerPedido(c),
 			hoje.value,
-			repositoriosDeDevolucao,
+			repositoriosDaDevolucao,
 		);
 		if (estado.tipo === "Devolvido") return c.json(estado.emprestimo, 200);
 		if (estado.tipo === "Recusado") {

@@ -6,12 +6,7 @@ import {
 	type EstadoDaSuspensao,
 	suspensaoPedida,
 } from "./eventosDeMembros.ts";
-import {
-	definirSuspenso,
-	inserirMembro,
-	listarMembros,
-	type RepositoriosDeMembros,
-} from "./repositorio.server.ts";
+import { listarMembros, repositoriosDeMembros } from "./repositorio.server.ts";
 
 function nome(corpo: unknown): string {
 	if (typeof corpo !== "object" || corpo === null) return "";
@@ -27,10 +22,7 @@ function respostaDaSuspensao(c: Context, estado: EstadoDaSuspensao) {
 
 /** As rotas dos membros, montadas em /api/membros, fechando sobre o `db`. */
 export function rotaDeMembros(db: DatabaseSync): Hono {
-	const repositorios: RepositoriosDeMembros = {
-		inserirMembro: (dados) => inserirMembro(db, dados),
-		definirSuspenso: (id, suspenso) => definirSuspenso(db, id, suspenso),
-	};
+	const repositorios = repositoriosDeMembros(db);
 	const rota = new Hono();
 
 	rota.get("/", (c) => {
