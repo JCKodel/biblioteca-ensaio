@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
+import { err, ok } from "../../lib/result.ts";
 import {
 	cadastroDeExemplarPedido,
 	cadastroDeLivroPedido,
 } from "./eventosDeCatalogo.ts";
 import type { DadosDoLivro } from "./regras.ts";
 import type { RepositoriosDoCatalogo } from "./repositorio.server.ts";
-import { err, ok } from "./result.ts";
 
 function naoEsperado(): never {
 	throw new Error("não chamado neste teste");

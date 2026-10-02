@@ -1,3 +1,5 @@
+import type { BancoDeDadosFalhou } from "../../lib/consultar.server.ts";
+import { estadoDe } from "../../lib/estadoDe.ts";
 import {
 	type CadastroDeExemplarPedido,
 	type CadastroDeLivroPedido,
@@ -6,10 +8,7 @@ import {
 	type RecusaDeLivro,
 	validarLivro,
 } from "./regras.ts";
-import type {
-	BancoDeDadosFalhou,
-	RepositoriosDoCatalogo,
-} from "./repositorio.server.ts";
+import type { RepositoriosDoCatalogo } from "./repositorio.server.ts";
 
 export type EstadoDoCadastroDeLivro =
 	| { tipo: "Cadastrado"; livro: Livro }
@@ -20,16 +19,6 @@ export type EstadoDoCadastroDeExemplar =
 	| { tipo: "Cadastrado"; exemplar: Exemplar }
 	| { tipo: "Recusado"; recusa: "NaoEncontrado" }
 	| { tipo: "Falhou"; excecao: BancoDeDadosFalhou };
-
-// As recusas são strings e a exceção é um objeto com `codigo` (capítulo 7).
-function estadoDe<R extends string>(
-	erro: R | BancoDeDadosFalhou,
-):
-	| { tipo: "Recusado"; recusa: R }
-	| { tipo: "Falhou"; excecao: BancoDeDadosFalhou } {
-	if (typeof erro === "string") return { tipo: "Recusado", recusa: erro };
-	return { tipo: "Falhou", excecao: erro };
-}
 
 export function cadastroDeLivroPedido(
 	evento: CadastroDeLivroPedido,

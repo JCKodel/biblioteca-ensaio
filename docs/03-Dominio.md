@@ -43,6 +43,19 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | orquestradores do catálogo | `cadastroDeLivroPedido(evento, repositorios)`, `cadastroDeExemplarPedido(evento, repositorios)` | Transformam cada pedido em um `EstadoDoCadastroDeLivro` ou um `EstadoDoCadastroDeExemplar`. |
 | estados do cadastro | `EstadoDoCadastroDeLivro` e `EstadoDoCadastroDeExemplar`, campo `tipo`: `Cadastrado` \| `Recusado` \| `Falhou` | O que cada orquestrador do catálogo publica depois de um pedido. |
 | repositórios do catálogo | `RepositoriosDoCatalogo`: `inserirLivro`, `buscarLivro`, `inserirExemplar`; e `listarLivros` | As funções de busca e gravação do catálogo. |
+| membros | a fatia `membros/` | As pessoas inscritas na biblioteca, cadastradas, suspensas e reativadas pelo bibliotecário. |
+| nome | `nome` | O nome de um membro. Obrigatório, aparado, de 1 a 120 caracteres. Dois membros podem ter o mesmo nome. |
+| matrícula | o `id` do membro | O número que identifica um membro, mostrado ao bibliotecário ("Matrícula 7"). É o id que o banco gera; não há outro documento. |
+| membro do cadastro | `MembroDoCadastro`, `{ id, nome, suspenso }` | Um membro como o cadastro o guarda e a lista o mostra. O `Membro` da regra do empréstimo é outro recorte do mesmo membro, `{ id, emAtraso, suspenso }`, montado por `buscarMembro` na entrega `emprestar-livro`. |
+| situação do membro | `textoDaSituacao(suspenso)`: "Ativo" \| "Suspenso" | O caso de uso que escreve a situação de um membro na lista. |
+| pedido de cadastro de membro | `CadastroDeMembroPedido`, `{ nome }`, como foi digitado | O evento que a tela de membros dispara para cadastrar um membro. |
+| dados do membro | `DadosDoMembro`, `{ nome }` | O que o bibliotecário informou sobre um membro, já aparado e validado. |
+| cadastrar | `cadastrar(pedido)` | O caso de uso que confere um `CadastroDeMembroPedido`: devolve `DadosDoMembro` ou uma `RecusaDeMembro`. Um membro novo nunca começa suspenso. |
+| recusa de membro | `RecusaDeMembro = "NomeInvalido"` | Os dados do membro não servem. Nada falhou. |
+| pedido de suspensão | `SuspensaoPedida`, `{ membroId, suspenso }` | O evento que a tela de membros dispara para suspender (`suspenso: true`) ou reativar (`suspenso: false`) um membro. |
+| orquestradores dos membros | `cadastroDeMembroPedido(evento, repositorios)`, `suspensaoPedida(evento, repositorios)` | Transformam cada pedido em um `EstadoDoCadastroDeMembro` ou um `EstadoDaSuspensao`. |
+| estados dos membros | `EstadoDoCadastroDeMembro`, campo `tipo`: `Cadastrado` \| `Recusado` \| `Falhou`; `EstadoDaSuspensao`, campo `tipo`: `Alterado` \| `Recusado` \| `Falhou` | O que cada orquestrador dos membros publica depois de um pedido. |
+| repositórios dos membros | `RepositoriosDeMembros`: `inserirMembro`, `definirSuspenso`; e `listarMembros` | As funções de gravação e de leitura do cadastro de membros. |
 
 ## Mensagens ao usuário
 
@@ -58,12 +71,14 @@ Escritas uma vez, aqui, e usadas literalmente:
 | `AutorInvalido` | Informe o autor, com até 200 caracteres. |
 | `AnoInvalido` | O ano é um número de até quatro algarismos, ou fica em branco. |
 | `NaoEncontrado`, de um livro | Este livro não está no catálogo. |
+| `NomeInvalido` | Informe o nome, com até 120 caracteres. |
+| `NaoEncontrado`, de um membro | Este membro não está cadastrado. |
 
 ## Entidades
 
 * **Livro:** `id`, `titulo`, `autor`, `ano`. Título e autor são aparados e têm de 1 a 200 caracteres; `ano`, quando informado, é um inteiro de 1 a 9999, e senão é `null`. Dois livros podem ter o mesmo título e o mesmo autor.
 * **Exemplar:** `id`, `livroId`. Pertence a um livro.
-* **Membro:** `id`, `emAtraso`, `suspenso`. `emAtraso` não é guardado: o repositório o calcula com `hoje`. Os demais campos (nome) entram aqui pela entrega `membros`.
+* **Membro:** `id`, `nome`, `suspenso` guardados; `emAtraso` não é guardado: o repositório do empréstimo o calcula com `hoje`. O nome é aparado e tem de 1 a 120 caracteres; dois membros podem ter o mesmo nome, e a matrícula (o `id`) os distingue. Um membro novo começa ativo (`suspenso` falso). Suspender um membro já suspenso, ou reativar um já ativo, não muda nada e não é recusado. A regra do empréstimo lê o recorte `{ id, emAtraso, suspenso }`; a tela de membros, o `MembroDoCadastro`.
 * **Emprestimo:** um exemplar, um membro, o dia do empréstimo, `devolverEm`, e a devolução quando houver. Os nomes exatos dos campos entram aqui pela entrega `emprestar-livro`.
 
 ## Invariantes

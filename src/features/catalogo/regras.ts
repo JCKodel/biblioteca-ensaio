@@ -1,4 +1,5 @@
-import { err, ok, type Result } from "./result.ts";
+import { MENSAGEM_DE_FALHA } from "../../lib/mensagemDeFalha.ts";
+import { err, ok, type Result } from "../../lib/result.ts";
 
 export type Livro = {
 	id: string;
@@ -59,5 +60,5 @@ export const mensagens: Record<
 	AutorInvalido: "Informe o autor, com até 200 caracteres.",
 	AnoInvalido: "O ano é um número de até quatro algarismos, ou fica em branco.",
 	NaoEncontrado: "Este livro não está no catálogo.",
-	Falhou: "Não foi possível acessar o banco da biblioteca. Tente de novo.",
+	Falhou: MENSAGEM_DE_FALHA,
 };
