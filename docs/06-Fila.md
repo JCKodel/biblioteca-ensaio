@@ -14,3 +14,20 @@ um membro com um livro atrasado ou com a inscrição suspensa é recusado.
 [x] devolver-livro   a bibliotecária registra uma devolução, e o exemplar fica livre
 [x] m1-review        o marco conferido contra o parágrafo dele
 ```
+
+## Marco 2: a biblioteca no dia a dia
+
+Quando ele fecha, a bibliotecária vê os empréstimos vencidos e encontra um livro
+pelo título ou pelo autor, vê os empréstimos de um membro com a data de devolução
+de cada um, e um bibliotecário novo trabalha no primeiro dia só com o guia.
+
+```
+[ ] dados-de-exemplo        um comando carrega livros, membros e três meses de empréstimos, para demonstração
+[ ] lista-de-atrasos        a bibliotecária vê os empréstimos vencidos
+[ ] busca-no-catalogo       a bibliotecária encontra um livro pelo título ou pelo autor
+[ ] emprestimos-do-membro   a página de um membro lista os empréstimos dele, com a data de devolução de cada um
+[ ] relatorio-do-mes        a bibliotecária vê quantos empréstimos e devoluções houve em cada mês
+[ ] guia-do-bibliotecario   um bibliotecário novo empresta e recebe de volta no primeiro dia, só com o guia
+[ ] aviso-de-atraso         o membro com livro atrasado recebe um aviso (espera a OD-2)
+[ ] m2-review               o marco conferido contra o parágrafo dele
+```
