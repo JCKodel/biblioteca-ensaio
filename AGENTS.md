@@ -21,7 +21,7 @@ Prosa em português do Brasil; identificadores em português, sem acento.
 - O agente coloca em stage e sugere a mensagem de commit. Ele nunca faz commit nem merge.
 
 ## Não reconstrua
-- Nada ainda: o projeto não tem código. O que for tentado e removido entra aqui com o seu ADR.
+- Nada ainda. O que for tentado e removido entra aqui com o seu ADR.
 
 ## Como trabalhar
 - FOCUS inteiro em fatias verticais, `src/features/<feature>/`: tela, orquestrador, casos de uso, repositório (docs/01, ADR-0002).

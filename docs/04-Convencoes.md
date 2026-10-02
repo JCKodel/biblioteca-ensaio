@@ -20,7 +20,23 @@
 
 * **Biome** faz o lint e a formatação, com tabs para indentar. O que o Biome aceita é o estilo; não há outro guia.
 * **Scripts que rodam no Windows sem WSL.** Todo script do `package.json` roda igual no Windows, no macOS e no Linux: nada de `rm`, `&`, `printf` nem variável de ambiente inline. Quando é preciso mais que um comando de ferramenta, o script é um arquivo Node (ADR-0005).
-* **Estilo visual:** não há arquivo de design. A referência é o estilo do esqueleto, que a entrega `esqueleto` registra aqui (criado pela primeira entrega).
+* **TypeScript apagável.** O servidor e os scripts rodam pelo Node, que remove os tipos sem compilar; o `tsconfig.json` liga `erasableSyntaxOnly` e `allowImportingTsExtensions`. Só sintaxe apagável (nada de `enum`, `namespace`, propriedades declaradas no construtor) e imports relativos com a extensão (`./banco.server.ts`, `./Aplicacao.tsx`). Um único `tsconfig.json` cobre cliente, servidor, testes e scripts.
+
+## Estilo visual
+
+Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
+
+| Variável | Valor |
+|---|---|
+| `--fonte` | `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` |
+| `--tamanho-do-texto` | `16px` |
+| `--altura-da-linha` | `1.5` |
+| `--cor-do-texto` | `#1a1a1a`, sobre `--cor-do-fundo` `#ffffff` (contraste 17,4:1) |
+| `--cor-de-destaque` | `#1f5f8b`, a faixa do cabeçalho, com `--cor-do-texto-no-destaque` `#ffffff` (contraste 6,8:1) |
+| `--margem` | `16px` |
+| `--largura-maxima` | `960px`, o conteúdo centrado |
+
+O título do cabeçalho tem `1.5rem`. Sem modo escuro, ícone nem fonte da web.
 
 ## Testes
 

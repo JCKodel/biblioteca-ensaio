@@ -1,0 +1,37 @@
+{
+	"name": "biblioteca",
+	"private": true,
+	"type": "module",
+	"license": "AGPL-3.0-only",
+	"engines": {
+		"node": ">=24"
+	},
+	"scripts": {
+		"dev": "concurrently --kill-others --names cliente,servidor \"vite\" \"node --watch src/iniciar.server.ts\"",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"test": "vitest run",
+		"e2e": "playwright test",
+		"build": "vite build",
+		"verify": "node scripts/verificar.ts"
+	},
+	"dependencies": {
+		"@hono/node-server": "^2.1.3",
+		"hono": "^4.13.12",
+		"react": "^19.3.0",
+		"react-dom": "^19.3.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.15",
+		"@playwright/test": "^1.63.0",
+		"@types/node": "^24.19.1",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@vitejs/plugin-react": "^6.1.1",
+		"concurrently": "^10.0.5",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.2",
+		"vitest": "^5.0.3"
+	}
+}

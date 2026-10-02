@@ -80,10 +80,12 @@ Exceções como valores (capítulo 5 do livro):
 
 ## Ambientes
 
-* **Local**, a máquina do desenvolvedor (Windows, macOS ou Linux): o cliente, o servidor e o banco SQLite em arquivo. É o único ambiente. O comando que o sobe é criado pela primeira entrega (`esqueleto`).
+* **Local**, a máquina do desenvolvedor (Windows, macOS ou Linux): o cliente, o servidor e o banco SQLite em arquivo. É o único ambiente. `npm run dev` o sobe num terminal só: o Vite em `http://localhost:5173`, que repassa `/api` ao servidor, e o servidor Hono em `http://localhost:3000` (`node --watch src/iniciar.server.ts`), os dois pelo `concurrently`; fechar o comando encerra os dois. Na partida, o servidor cria `data/biblioteca.sqlite` (ignorado pelo git) e aplica as migrações pendentes (docs/02 §Esquema).
+
+O servidor roda TypeScript pelo próprio Node, que remove os tipos, sem `tsx` nem passo de build; o `npm run build` é só o do cliente, para `dist/`. A raiz de composição é `src/iniciar.server.ts`, e `src/servidor.server.ts` monta o app Hono (`criarServidor(db)`) onde as rotas das fatias se montam.
 
 Não há produção nem homologação no Marco 1.
 
 ## Tentado e removido de propósito
 
-Nada ainda: o projeto não tem código. Quando algo for tentado e removido, entra aqui com o ADR que diz por quê.
+Nada ainda. Quando algo for tentado e removido, entra aqui com o ADR que diz por quê.

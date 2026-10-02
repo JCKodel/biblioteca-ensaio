@@ -44,10 +44,10 @@ docs/06: uma linha por entrega, em ordem, sob marcos. A linha nunca sai da fila;
 ## 5. Este projeto
 
 * **Língua da documentação:** português do Brasil. Identificadores em português, sem acento (docs/04).
-* **Verificar:** `npm run verify`, que roda a checagem de tipos, o lint, os testes unitários, os testes ponta a ponta e o build. Verde antes de qualquer coisa ser declarada pronta. Criado pela primeira entrega (`esqueleto`).
+* **Verificar:** `npm run verify`, que roda a checagem de tipos, o lint, os testes unitários, os testes ponta a ponta e o build. Verde antes de qualquer coisa ser declarada pronta. É o script `scripts/verificar.ts`: roda os passos nessa ordem, para no primeiro que falha, diz qual foi e sai com código diferente de zero. Não regrava as capturas de tela.
 * **Ambientes:**
-  * Local, a máquina do desenvolvedor: o cliente, o servidor e o banco SQLite. Uma entrega o deixa rodando com as migrações dela aplicadas na partida; o comando que o sobe é criado pela primeira entrega (`esqueleto`).
-* **Prova de uma tela:** capturas de tela com o Playwright em 390 e 1280 pixels de largura, salvas em `work/done/<slug>-*.png`. Não há arquivo de design: a referência é o estilo do esqueleto, registrado no docs/04 (criado pela primeira entrega).
+  * Local, a máquina do desenvolvedor: o cliente, o servidor e o banco SQLite. Uma entrega o deixa rodando com as migrações dela aplicadas na partida; o comando que o sobe é `npm run dev` (docs/01 §Ambientes).
+* **Prova de uma tela:** capturas de tela com o Playwright em 390 e 1280 pixels de largura, salvas em `work/done/<slug>-*.png`. Não há arquivo de design: a referência é o estilo do esqueleto, registrado no docs/04 §Estilo visual, e as capturas `work/done/esqueleto-390.png` e `-1280.png`. As capturas são tiradas uma vez, fora do `verify`: `npx playwright screenshot --viewport-size=390,844 http://localhost:5173 work/done/<slug>-390.png` (e `1280,800`), com o `npm run dev` rodando.
 * **Publicação:** nenhuma. Não há ambiente além do local.
 * **Git:** um worktree por entrega. O /propose cria o worktree `../biblioteca-<slug>` no branch `<slug>`, a partir do `main`, e escreve a página lá; o /apply constrói lá. A pessoa faz o commit no branch e, na pasta principal, o `git merge --no-ff <slug>` no `main` (ou um pull request com commit de merge no GitHub), depois `git worktree remove ../biblioteca-<slug>` e `git branch -d <slug>`. A página e a construção de uma entrega são uma mudança: um merge, desfeito com `git revert -m 1 <merge>`. O agente coloca em stage; ele nunca faz commit nem merge.
 
