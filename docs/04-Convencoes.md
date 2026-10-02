@@ -24,7 +24,7 @@
 
 ## Estilo visual
 
-Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` (o cabeçalho, ainda sem os links), `work/done/catalogo-390.png` e `work/done/catalogo-1280.png` (um formulário e uma lista), `work/done/membros-390.png` e `work/done/membros-1280.png` (o cabeçalho com os links, e uma lista com o botão de cada linha), `work/done/emprestar-livro-390.png` e `work/done/emprestar-livro-1280.png` (um formulário com duas escolhas, e uma lista sem botão) e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
+Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` (o cabeçalho, ainda sem os links), `work/done/catalogo-390.png` e `work/done/catalogo-1280.png` (um formulário e uma lista), `work/done/membros-390.png` e `work/done/membros-1280.png` (o cabeçalho com os links, e uma lista com o botão de cada linha), `work/done/emprestar-livro-390.png` e `work/done/emprestar-livro-1280.png` (um formulário com duas escolhas, e uma lista sem botão), `work/done/devolver-livro-390.png` e `work/done/devolver-livro-1280.png` (a lista de empréstimos abertos com o botão "Registrar devolução" em cada linha) e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
 
 | Variável | Valor |
 |---|---|

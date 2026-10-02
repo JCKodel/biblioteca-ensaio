@@ -8,8 +8,8 @@ import type {
 } from "./regras.ts";
 
 // O orquestrador do cliente: carrega as três listas, empresta, recarrega as
-// três depois de cada empréstimo (emprestado ou recusado) e publica o estado
-// que a tela renderiza.
+// três depois de cada empréstimo (emprestado ou recusado) e de cada devolução
+// (pelo `depoisDeDevolver`) e publica o estado que a tela renderiza.
 
 export type ListasDoEmprestimo =
 	| { tipo: "Carregando" }
@@ -105,6 +105,16 @@ export function useEmprestimo() {
 		setEmprestando(false);
 	}
 
+	/**
+	 * O que a devolução chama depois de um pedido: o aviso do formulário pode
+	 * não valer mais, e as três listas são relidas, então a escolha "Exemplar"
+	 * ganha o exemplar devolvido e o `emAtraso` do membro escolhido muda.
+	 */
+	function depoisDeDevolver(): Promise<boolean> {
+		setAviso(null);
+		return recarregar();
+	}
+
 	return {
 		membroId,
 		exemplarId,
@@ -114,5 +124,6 @@ export function useEmprestimo() {
 		escolherMembro,
 		escolherExemplar,
 		emprestar,
+		depoisDeDevolver,
 	};
 }

@@ -12,12 +12,14 @@ import {
 } from "../membros/repositorio.server.ts";
 import type { Emprestimo } from "./regras.ts";
 import {
+	buscarEmprestimo,
 	buscarExemplar,
 	buscarMembro,
 	inserirEmprestimo,
 	listarEmprestimosAbertos,
 	listarExemplaresDisponiveis,
 	listarMembrosDoEmprestimo,
+	registrarDevolucao,
 } from "./repositorio.server.ts";
 
 vi.spyOn(console, "log").mockImplementation(() => {});
@@ -299,5 +301,168 @@ describe("repositório do empréstimo", () => {
 		expect(listarEmprestimosAbertos(db)).toEqual(falha);
 		expect(listarExemplaresDisponiveis(db)).toEqual(falha);
 		expect(listarMembrosDoEmprestimo(db, "2026-10-01")).toEqual(falha);
+		expect(buscarEmprestimo(db, "1", "1")).toEqual(falha);
+		expect(
+			registrarDevolucao(
+				db,
+				emprestimo("1", "1", { devolvidoEm: "2026-10-15" }),
+			),
+		).toEqual(falha);
+	});
+});
+
+describe("repositório da devolução", () => {
+	function abertos(db: DatabaseSync) {
+		return valor(listarEmprestimosAbertos(db)).map((aberto) => [
+			aberto.exemplarId,
+			aberto.membroId,
+		]);
+	}
+
+	function disponiveis(db: DatabaseSync) {
+		return valor(listarExemplaresDisponiveis(db)).map((e) => e.id);
+	}
+
+	test("buscarEmprestimo acha o empréstimo aberto do exemplar a esse membro", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		const aberto = emprestimo(exemplar.id, capitu.id);
+		valor(inserirEmprestimo(db, aberto));
+		expect(buscarEmprestimo(db, exemplar.id, capitu.id)).toEqual({
+			ok: true,
+			value: aberto,
+		});
+	});
+
+	test("buscarEmprestimo de um par sem empréstimo devolve NaoEncontrado", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		const bentinho = membro(db, "Bentinho");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		expect(buscarEmprestimo(db, exemplar.id, bentinho.id)).toEqual({
+			ok: false,
+			error: "NaoEncontrado",
+		});
+		expect(buscarEmprestimo(db, "999", capitu.id)).toEqual({
+			ok: false,
+			error: "NaoEncontrado",
+		});
+	});
+
+	test("buscarEmprestimo acha o aberto quando o mesmo exemplar já foi devolvido pelo mesmo membro", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(exemplar.id, capitu.id, { devolvidoEm: "2026-10-10" }),
+			),
+		);
+		const novo = emprestimo(exemplar.id, capitu.id, {
+			emprestadoEm: "2026-10-10",
+			devolverEm: "2026-10-31",
+		});
+		valor(inserirEmprestimo(db, novo));
+		expect(buscarEmprestimo(db, exemplar.id, capitu.id)).toEqual({
+			ok: true,
+			value: novo,
+		});
+	});
+
+	test("registrarDevolucao grava o dia da devolução e libera o exemplar", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		const bentinho = membro(db, "Bentinho");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		expect(disponiveis(db)).toEqual([]);
+
+		const devolvido = emprestimo(exemplar.id, capitu.id, {
+			devolvidoEm: "2026-10-15",
+		});
+		expect(registrarDevolucao(db, devolvido)).toEqual({
+			ok: true,
+			value: devolvido,
+		});
+		expect(buscarEmprestimo(db, exemplar.id, capitu.id)).toEqual({
+			ok: true,
+			value: devolvido,
+		});
+		expect(disponiveis(db)).toEqual([exemplar.id]);
+		expect(abertos(db)).toEqual([]);
+		const novo = emprestimo(exemplar.id, bentinho.id, {
+			emprestadoEm: "2026-10-15",
+			devolverEm: "2026-11-05",
+		});
+		expect(inserirEmprestimo(db, novo)).toEqual({ ok: true, value: novo });
+	});
+
+	test("registrarDevolucao recusa um empréstimo já devolvido", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		const primeira = emprestimo(exemplar.id, capitu.id, {
+			devolvidoEm: "2026-10-15",
+		});
+		valor(registrarDevolucao(db, primeira));
+		expect(
+			registrarDevolucao(
+				db,
+				emprestimo(exemplar.id, capitu.id, { devolvidoEm: "2026-10-16" }),
+			),
+		).toEqual({ ok: false, error: "JaDevolvido" });
+		expect(buscarEmprestimo(db, exemplar.id, capitu.id)).toEqual({
+			ok: true,
+			value: primeira,
+		});
+	});
+
+	test("registrarDevolucao de uma tela parada não encerra o empréstimo de outro membro", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		const bentinho = membro(db, "Bentinho");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		valor(
+			registrarDevolucao(
+				db,
+				emprestimo(exemplar.id, capitu.id, { devolvidoEm: "2026-10-15" }),
+			),
+		);
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(exemplar.id, bentinho.id, {
+					emprestadoEm: "2026-10-15",
+					devolverEm: "2026-11-05",
+				}),
+			),
+		);
+		expect(
+			registrarDevolucao(
+				db,
+				emprestimo(exemplar.id, capitu.id, { devolvidoEm: "2026-10-16" }),
+			),
+		).toEqual({ ok: false, error: "JaDevolvido" });
+		expect(abertos(db)).toEqual([[exemplar.id, bentinho.id]]);
+	});
+
+	test("buscarMembro deixa de contar o livro atrasado depois da devolução", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		expect(valor(buscarMembro(db, capitu.id, "2026-10-30")).emAtraso).toBe(1);
+		valor(
+			registrarDevolucao(
+				db,
+				emprestimo(exemplar.id, capitu.id, { devolvidoEm: "2026-10-30" }),
+			),
+		);
+		expect(valor(buscarMembro(db, capitu.id, "2026-10-30")).emAtraso).toBe(0);
 	});
 });

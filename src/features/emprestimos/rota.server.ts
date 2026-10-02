@@ -1,18 +1,24 @@
 import type { DatabaseSync } from "node:sqlite";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { falhou } from "../../lib/falhou.server.ts";
 import { err, ok, type Result } from "../../lib/result.ts";
+import {
+	devolucaoPedida,
+	type RepositoriosDeDevolucao,
+} from "./devolucao/eventosDeDevolucao.ts";
 import {
 	emprestimoPedido,
 	type RepositoriosDeEmprestimo,
 } from "./eventosDeEmprestimo.ts";
 import {
+	buscarEmprestimo,
 	buscarExemplar,
 	buscarMembro,
 	inserirEmprestimo,
 	listarEmprestimosAbertos,
 	listarExemplaresDisponiveis,
 	listarMembrosDoEmprestimo,
+	registrarDevolucao,
 } from "./repositorio.server.ts";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
@@ -47,6 +53,28 @@ function campo(corpo: unknown, nome: "exemplarId" | "membroId"): string {
 	if (typeof corpo !== "object" || corpo === null) return "";
 	const valor = (corpo as Record<string, unknown>)[nome];
 	return typeof valor === "string" ? valor : "";
+}
+
+/**
+ * O corpo de um `EmprestimoPedido` ou de uma `DevolucaoPedida`, que têm a
+ * mesma forma. A fronteira HTTP é uma borda com o mundo de fora (capítulo 5):
+ * um corpo que não é JSON faz c.req.json() lançar, e vira aqui um pedido
+ * vazio. Primeira ocorrência: o POST /api/emprestimos; segunda: o POST
+ * /api/emprestimos/devolucao, que a trouxe para esta função.
+ */
+async function lerPedido(
+	c: Context,
+): Promise<{ exemplarId: string; membroId: string }> {
+	let corpo: unknown;
+	try {
+		corpo = await c.req.json();
+	} catch {
+		corpo = {};
+	}
+	return {
+		exemplarId: campo(corpo, "exemplarId"),
+		membroId: campo(corpo, "membroId"),
+	};
 }
 
 /** As rotas do empréstimo, montadas em /api/emprestimos, fechando sobre o `db`. */
@@ -86,23 +114,36 @@ export function rotaDeEmprestimos(
 			buscarExemplar: (id) => buscarExemplar(db, id),
 			inserirEmprestimo: (emprestimo) => inserirEmprestimo(db, emprestimo),
 		};
-		// A fronteira HTTP é uma borda com o mundo de fora (capítulo 5): um corpo
-		// que não é JSON faz c.req.json() lançar, e vira aqui um pedido vazio.
-		let corpo: unknown;
-		try {
-			corpo = await c.req.json();
-		} catch {
-			corpo = {};
-		}
 		const estado = emprestimoPedido(
-			{
-				exemplarId: campo(corpo, "exemplarId"),
-				membroId: campo(corpo, "membroId"),
-			},
+			await lerPedido(c),
 			hoje.value,
 			repositorios,
 		);
 		if (estado.tipo === "Emprestado") return c.json(estado.emprestimo, 201);
+		if (estado.tipo === "Recusado") {
+			const status = estado.recusa === "NaoEncontrado" ? 404 : 409;
+			return c.json({ recusa: estado.recusa }, status);
+		}
+		return falhou(c, estado.excecao);
+	});
+
+	// A devolução não lê `hoje` nos repositórios (a regra o põe no
+	// `Emprestimo`), então eles são montados uma vez, fechando sobre o `db`.
+	const repositoriosDeDevolucao: RepositoriosDeDevolucao = {
+		buscarEmprestimo: (exemplarId, membroId) =>
+			buscarEmprestimo(db, exemplarId, membroId),
+		registrarDevolucao: (emprestimo) => registrarDevolucao(db, emprestimo),
+	};
+
+	rota.post("/devolucao", async (c) => {
+		const hoje = lerHoje(c.req.header("x-hoje"), relogioDeTeste);
+		if (!hoje.ok) return c.json({ falha: hoje.error }, 400);
+		const estado = devolucaoPedida(
+			await lerPedido(c),
+			hoje.value,
+			repositoriosDeDevolucao,
+		);
+		if (estado.tipo === "Devolvido") return c.json(estado.emprestimo, 200);
 		if (estado.tipo === "Recusado") {
 			const status = estado.recusa === "NaoEncontrado" ? 404 : 409;
 			return c.json({ recusa: estado.recusa }, status);

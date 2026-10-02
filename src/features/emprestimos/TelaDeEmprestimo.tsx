@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
-import { mensagens, podePegarEmprestado, textoDaDevolucao } from "./regras.ts";
+import { TelaDeDevolucao } from "./devolucao/TelaDeDevolucao.tsx";
+import { mensagens, podePegarEmprestado } from "./regras.ts";
 import { useEmprestimo } from "./useEmprestimo.ts";
 
 export function TelaDeEmprestimo() {
@@ -12,6 +13,7 @@ export function TelaDeEmprestimo() {
 		escolherMembro,
 		escolherExemplar,
 		emprestar,
+		depoisDeDevolver,
 	} = useEmprestimo();
 
 	if (listas.tipo === "Carregando") {
@@ -92,25 +94,10 @@ export function TelaDeEmprestimo() {
 				</p>
 			)}
 
-			<h2 className="emprestimos__titulo">Empréstimos abertos</h2>
-			{emprestimos.length === 0 && <p>Nenhum empréstimo aberto.</p>}
-			{emprestimos.length > 0 && (
-				<ul className="emprestimos__lista">
-					{emprestimos.map((emprestimo) => (
-						<li className="emprestimo" key={emprestimo.exemplarId}>
-							<div className="emprestimo__texto">
-								<span className="emprestimo__exemplar">
-									{emprestimo.titulo}, exemplar {emprestimo.exemplarId}
-								</span>
-								<span>
-									{emprestimo.nome}, Matrícula {emprestimo.membroId}
-								</span>
-								<span>{textoDaDevolucao(emprestimo.devolverEm)}</span>
-							</div>
-						</li>
-					))}
-				</ul>
-			)}
+			<TelaDeDevolucao
+				emprestimos={emprestimos}
+				depoisDeDevolver={depoisDeDevolver}
+			/>
 		</section>
 	);
 }
