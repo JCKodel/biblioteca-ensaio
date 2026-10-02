@@ -10,7 +10,7 @@ um membro com um livro atrasado ou com a inscrição suspensa é recusado.
 [x] esqueleto        app e servidor vazios, npm run verify, primeira captura de tela
 [x] catalogo         a bibliotecária cadastra livros e seus exemplares
 [x] membros          a bibliotecária cadastra, suspende e reativa membros
-[ ] emprestar-livro  a bibliotecária empresta um exemplar, e as regras podem recusar
+[x] emprestar-livro  a bibliotecária empresta um exemplar, e as regras podem recusar
 [ ] devolver-livro   a bibliotecária registra uma devolução, e o exemplar fica livre
 [ ] m1-review        o marco conferido contra o parágrafo dele
 ```
