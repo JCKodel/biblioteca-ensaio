@@ -91,3 +91,27 @@ export const mensagens: Record<
 	NaoEncontrado: "Este membro ou este exemplar não está cadastrado.",
 	Falhou: MENSAGEM_DE_FALHA,
 };
+
+export type RecusaDeDevolucao = "JaDevolvido";
+
+/** Atrasada ou não, a devolução é a mesma: `hoje` não é comparado com `devolverEm`. */
+export function devolver(
+	emprestimo: Emprestimo,
+	hoje: string,
+): Result<Emprestimo, RecusaDeDevolucao> {
+	if (emprestimo.devolvidoEm !== null) return err("JaDevolvido");
+	return ok({ ...emprestimo, devolvidoEm: hoje });
+}
+
+/**
+ * Os textos do docs/03, literais. Separada de `mensagens` porque o
+ * `NaoEncontrado` da devolução tem outra frase.
+ */
+export const mensagensDaDevolucao: Record<
+	RecusaDeDevolucao | "NaoEncontrado" | "Falhou",
+	string
+> = {
+	JaDevolvido: "Este empréstimo já foi devolvido.",
+	NaoEncontrado: "Este exemplar não está emprestado a este membro.",
+	Falhou: MENSAGEM_DE_FALHA,
+};

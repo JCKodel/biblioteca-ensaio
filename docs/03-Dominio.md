@@ -24,11 +24,16 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | relógio de teste | variável de ambiente `RELOGIO_DE_TESTE=cabecalho`; cabeçalho `x-hoje`; cabeçalho inválido, `HojeInvalido` | Só no e2e: com a variável ligada na partida do servidor, o cabeçalho `x-hoje: AAAA-MM-DD` dá o `hoje` daquela requisição, e uma data inválida nele é `HojeInvalido` (`400`). Sem a variável, o cabeçalho é ignorado. Nenhuma regra sabe dele. |
 | livros em atraso | `emAtraso` | Quantos empréstimos abertos do membro têm `devolverEm` anterior a `hoje`. |
 | suspenso | `suspenso` | O membro está com a inscrição suspensa e não pode pegar emprestado até ser reativado. |
-| devolução | `devolver` | O registro de que o exemplar voltou; encerra o empréstimo e deixa o exemplar livre. |
+| devolução | `devolver(emprestimo, hoje)`; a subfatia `emprestimos/devolucao/` | O registro de que o exemplar voltou; encerra o empréstimo e deixa o exemplar livre. O caso de uso devolve o `Emprestimo` com `devolvidoEm` igual a `hoje`, ou uma `RecusaDeDevolucao`. Uma devolução depois da data de devolução é aceita e fica registrada (`devolvidoEm` depois de `devolverEm`); multa não há (OD-1). |
+| recusa de devolução | `RecusaDeDevolucao = "JaDevolvido"` | O empréstimo pedido já foi devolvido. Nada falhou. |
+| pedido de devolução | `DevolucaoPedida`, `{ exemplarId, membroId }` | O evento que a lista "Empréstimos abertos" dispara: o empréstimo desse exemplar a esse membro. |
+| orquestrador da devolução | `devolucaoPedida(evento, hoje, repositorios)` | Transforma uma `DevolucaoPedida` em um `EstadoDaDevolucao`. |
+| estado da devolução | `EstadoDaDevolucao`, campo `tipo`: `Devolvido` \| `Recusado` \| `Falhou` | O que o orquestrador da devolução publica depois de um pedido. |
+| repositórios da devolução | `RepositoriosDeDevolucao`: `buscarEmprestimo`, `registrarDevolucao` | As funções de busca e gravação que o orquestrador da devolução recebe; moram no repositório do empréstimo. |
 | emprestar | `emprestar` | O caso de uso que decide um empréstimo: devolve um `Emprestimo` ou uma `RecusaDeEmprestimo`. |
 | pode pegar emprestado | `podePegarEmprestado` | A regra que diz se um membro pode pegar emprestado; o cliente a usa para decidir o que mostrar. |
 | recusa de empréstimo | `RecusaDeEmprestimo = "TemLivrosEmAtraso" \| "JaEmprestado" \| "MembroSuspenso"` | Uma regra dizendo não. Nada falhou. |
-| não encontrado | `NaoEncontrado` | O membro ou o exemplar pedido não existe. |
+| não encontrado | `NaoEncontrado` | O membro ou o exemplar pedido não existe; numa devolução, esse exemplar nunca foi emprestado a esse membro. |
 | falha do banco | `BancoDeDadosFalhou`, `{ codigo, mensagem }` | Uma exceção vinda do banco, traduzida em valor. |
 | consultar | `consultar(executar)` | O único `try`/`catch` perto do banco: roda uma chamada e devolve um `Result`. |
 | pedido de empréstimo | `EmprestimoPedido`, `{ exemplarId, membroId }` | O evento que a tela de empréstimo dispara. |
@@ -79,13 +84,15 @@ Escritas uma vez, aqui, e usadas literalmente:
 | `NomeInvalido` | Informe o nome, com até 120 caracteres. |
 | `NaoEncontrado`, de um membro | Este membro não está cadastrado. |
 | `NaoEncontrado`, de um empréstimo | Este membro ou este exemplar não está cadastrado. |
+| `JaDevolvido` | Este empréstimo já foi devolvido. |
+| `NaoEncontrado`, de uma devolução | Este exemplar não está emprestado a este membro. |
 
 ## Entidades
 
 * **Livro:** `id`, `titulo`, `autor`, `ano`. Título e autor são aparados e têm de 1 a 200 caracteres; `ano`, quando informado, é um inteiro de 1 a 9999, e senão é `null`. Dois livros podem ter o mesmo título e o mesmo autor.
 * **Exemplar:** `id`, `livroId`. Pertence a um livro.
 * **Membro:** `id`, `nome`, `suspenso` guardados; `emAtraso` não é guardado: o repositório do empréstimo o calcula com `hoje`. O nome é aparado e tem de 1 a 120 caracteres; dois membros podem ter o mesmo nome, e a matrícula (o `id`) os distingue. Um membro novo começa ativo (`suspenso` falso). Suspender um membro já suspenso, ou reativar um já ativo, não muda nada e não é recusado. A regra do empréstimo lê o recorte `{ id, emAtraso, suspenso }`; a tela de membros, o `MembroDoCadastro`.
-* **Emprestimo:** `exemplarId`, `membroId`, `emprestadoEm` (o `hoje` do empréstimo), `devolverEm` (`dataDeDevolucao(emprestadoEm)`) e `devolvidoEm` (`null` enquanto o exemplar não voltou; a entrega `devolver-livro` o preenche). No banco, a tabela `emprestimo` também tem um `id`, que o `Emprestimo` não carrega: `emprestar` cria o empréstimo antes de o banco existir para ele, e um empréstimo aberto se acha pelo exemplar, que tem no máximo um.
+* **Emprestimo:** `exemplarId`, `membroId`, `emprestadoEm` (o `hoje` do empréstimo), `devolverEm` (`dataDeDevolucao(emprestadoEm)`) e `devolvidoEm` (`null` enquanto o exemplar não voltou; a devolução o preenche com o `hoje` dela). No banco, a tabela `emprestimo` também tem um `id`, que o `Emprestimo` não carrega: `emprestar` cria o empréstimo antes de o banco existir para ele, e um empréstimo aberto se acha pelo exemplar, que tem no máximo um.
 
 ## Invariantes
 
@@ -95,3 +102,4 @@ Escritas uma vez, aqui, e usadas literalmente:
 * Um membro com `suspenso` verdadeiro não pega emprestado: `MembroSuspenso`.
 * Toda data é uma string `YYYY-MM-DD`. Nenhuma regra lê o relógio; `hoje` chega como valor.
 * Uma devolução encerra o empréstimo aberto do exemplar; depois dela, o exemplar está livre.
+* Um empréstimo é devolvido uma vez: o segundo pedido é `JaDevolvido` e não muda nada.

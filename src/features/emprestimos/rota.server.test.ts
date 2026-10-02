@@ -273,3 +273,170 @@ describe("rotas do empréstimo, sem o relógio de teste", () => {
 		erros.mockRestore();
 	});
 });
+
+function devolver(app: App, pedido: unknown, xHoje?: string) {
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+	};
+	if (xHoje) headers["x-hoje"] = xHoje;
+	return app.request("/api/emprestimos/devolucao", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(pedido),
+	});
+}
+
+async function disponiveis(app: App) {
+	return (await app.request("/api/emprestimos/exemplares")).json();
+}
+
+describe("rota da devolução, com o relógio de teste", () => {
+	test("POST /api/emprestimos/devolucao responde 200 com devolvidoEm do x-hoje, libera o exemplar e o membro volta a pegar", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const outro = await exemplarNovo(app, "Quincas Borba");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId }, "2026-10-01");
+
+		const resposta = await devolver(
+			app,
+			{ exemplarId, membroId },
+			"2026-10-30",
+		);
+		expect(resposta.status).toBe(200);
+		expect(await resposta.json()).toEqual({
+			exemplarId,
+			membroId,
+			emprestadoEm: "2026-10-01",
+			devolverEm: "2026-10-22",
+			devolvidoEm: "2026-10-30",
+		});
+		expect(await abertos(app)).toEqual([]);
+		expect(
+			(await disponiveis(app)).map((e: { id: string }) => e.id).sort(),
+		).toEqual([exemplarId, outro].sort());
+
+		const novo = await emprestar(
+			app,
+			{ exemplarId: outro, membroId },
+			"2026-10-30",
+		);
+		expect(novo.status).toBe(201);
+	});
+
+	test("um membro com dois livros atrasados que devolve um continua recusado", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const primeiro = await exemplarNovo(app, "Dom Casmurro");
+		const segundo = await exemplarNovo(app, "Quincas Borba");
+		const terceiro = await exemplarNovo(app, "Esaú e Jacó");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId: primeiro, membroId }, "2026-10-01");
+		await emprestar(app, { exemplarId: segundo, membroId }, "2026-10-01");
+		const devolucao = await devolver(
+			app,
+			{ exemplarId: primeiro, membroId },
+			"2026-10-30",
+		);
+		expect(devolucao.status).toBe(200);
+		const resposta = await emprestar(
+			app,
+			{ exemplarId: terceiro, membroId },
+			"2026-10-30",
+		);
+		expect(resposta.status).toBe(409);
+		expect(await resposta.json()).toEqual({ recusa: "TemLivrosEmAtraso" });
+	});
+
+	test("um membro suspenso devolve com 200", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Escobar");
+		await emprestar(app, { exemplarId, membroId }, "2026-10-01");
+		await postar(app, `/api/membros/${membroId}/suspensao`);
+		const resposta = await devolver(
+			app,
+			{ exemplarId, membroId },
+			"2026-10-05",
+		);
+		expect(resposta.status).toBe(200);
+		expect((await resposta.json()).devolvidoEm).toBe("2026-10-05");
+	});
+
+	test("a segunda devolução do mesmo empréstimo responde 409 JaDevolvido", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId }, "2026-10-01");
+		await devolver(app, { exemplarId, membroId }, "2026-10-10");
+		const resposta = await devolver(
+			app,
+			{ exemplarId, membroId },
+			"2026-10-11",
+		);
+		expect(resposta.status).toBe(409);
+		expect(await resposta.json()).toEqual({ recusa: "JaDevolvido" });
+	});
+
+	test("POST /api/emprestimos/devolucao responde 400 HojeInvalido sem gravar nada", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId }, "2026-10-01");
+		const resposta = await devolver(
+			app,
+			{ exemplarId, membroId },
+			"2026-02-30",
+		);
+		expect(resposta.status).toBe(400);
+		expect(await resposta.json()).toEqual({ falha: "HojeInvalido" });
+		expect(await abertos(app)).toHaveLength(1);
+	});
+});
+
+describe("rota da devolução, sem o relógio de teste", () => {
+	test("POST /api/emprestimos/devolucao registra a data local", async () => {
+		const { app } = servidor();
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId });
+		const resposta = await devolver(
+			app,
+			{ exemplarId, membroId },
+			"2000-01-01",
+		);
+		expect(resposta.status).toBe(200);
+		expect((await resposta.json()).devolvidoEm).toBe(dataLocal());
+	});
+
+	test("POST /api/emprestimos/devolucao responde 404 NaoEncontrado a um par sem empréstimo e a um corpo que não é JSON", async () => {
+		const { app } = servidor();
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const capitu = await membroNovo(app, "Capitu");
+		const bentinho = await membroNovo(app, "Bentinho");
+		await emprestar(app, { exemplarId, membroId: capitu });
+		const respostas = [
+			await devolver(app, { exemplarId, membroId: bentinho }),
+			await devolver(app, { exemplarId: "999", membroId: capitu }),
+			await app.request("/api/emprestimos/devolucao", {
+				method: "POST",
+				body: "isto não é JSON",
+			}),
+		];
+		for (const resposta of respostas) {
+			expect(resposta.status).toBe(404);
+			expect(await resposta.json()).toEqual({ recusa: "NaoEncontrado" });
+		}
+		expect(await abertos(app)).toHaveLength(1);
+	});
+
+	test("com o banco fechado, POST /api/emprestimos/devolucao responde 500 e escreve a mensagem no terminal", async () => {
+		const { db, app } = servidor();
+		const erros = vi.spyOn(console, "error").mockImplementation(() => {});
+		db.close();
+		const resposta = await devolver(app, { exemplarId: "1", membroId: "1" });
+		expect(resposta.status).toBe(500);
+		expect(await resposta.json()).toEqual({ falha: "BancoDeDadosFalhou" });
+		expect(erros).toHaveBeenCalledWith(expect.stringMatching(/not open/));
+		erros.mockRestore();
+	});
+});

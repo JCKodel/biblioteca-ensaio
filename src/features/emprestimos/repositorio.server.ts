@@ -181,3 +181,70 @@ export function listarMembrosDoEmprestimo(
 		return linhas.map(paraMembroDoEmprestimo);
 	});
 }
+
+/**
+ * O empréstimo mais recente desse exemplar a esse membro, aberto ou devolvido:
+ * quem decide `JaDevolvido` é a regra `devolver`, não o SQL.
+ */
+export function buscarEmprestimo(
+	db: DatabaseSync,
+	exemplarId: string,
+	membroId: string,
+): Result<Emprestimo, "NaoEncontrado" | BancoDeDadosFalhou> {
+	const linha = consultar(
+		() =>
+			db
+				.prepare(
+					`SELECT exemplar_id, membro_id, emprestado_em, devolver_em, devolvido_em
+					FROM emprestimo
+					WHERE exemplar_id = ? AND membro_id = ?
+					ORDER BY id DESC
+					LIMIT 1`,
+				)
+				.get(Number(exemplarId), Number(membroId)) as
+				| {
+						exemplar_id: number;
+						membro_id: number;
+						emprestado_em: string;
+						devolver_em: string;
+						devolvido_em: string | null;
+				  }
+				| undefined,
+	);
+	if (!linha.ok) return linha;
+	if (!linha.value) return err("NaoEncontrado");
+	return ok({
+		exemplarId: String(linha.value.exemplar_id),
+		membroId: String(linha.value.membro_id),
+		emprestadoEm: linha.value.emprestado_em,
+		devolverEm: linha.value.devolver_em,
+		devolvidoEm: linha.value.devolvido_em,
+	});
+}
+
+/**
+ * Grava só onde o empréstimo ainda está aberto: nenhuma linha mudada é
+ * `JaDevolvido`, porque outro pedido chegou antes. É o lugar onde dois
+ * bibliotecários não competem, como o índice no `JaEmprestado`.
+ */
+export function registrarDevolucao(
+	db: DatabaseSync,
+	emprestimo: Emprestimo,
+): Result<Emprestimo, "JaDevolvido" | BancoDeDadosFalhou> {
+	const mudadas = consultar(
+		() =>
+			db
+				.prepare(
+					`UPDATE emprestimo SET devolvido_em = ?
+					WHERE exemplar_id = ? AND membro_id = ? AND devolvido_em IS NULL`,
+				)
+				.run(
+					emprestimo.devolvidoEm,
+					Number(emprestimo.exemplarId),
+					Number(emprestimo.membroId),
+				).changes,
+	);
+	if (!mudadas.ok) return mudadas;
+	if (Number(mudadas.value) === 0) return err("JaDevolvido");
+	return ok(emprestimo);
+}

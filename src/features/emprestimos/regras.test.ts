@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
 	dataDeDevolucao,
+	devolver,
 	emprestar,
 	mensagens,
+	mensagensDaDevolucao,
 	podePegarEmprestado,
 	textoDaDevolucao,
 } from "./regras.ts";
@@ -99,6 +101,52 @@ describe("mensagens", () => {
 			JaEmprestado: "Este exemplar acabou de ser emprestado a outra pessoa.",
 			MembroSuspenso: "A sua matrícula está suspensa.",
 			NaoEncontrado: "Este membro ou este exemplar não está cadastrado.",
+			Falhou: "Não foi possível acessar o banco da biblioteca. Tente de novo.",
+		});
+	});
+});
+
+describe("devolver", () => {
+	const aberto = {
+		exemplarId: "e1",
+		membroId: "m1",
+		emprestadoEm: "2026-10-01",
+		devolverEm: "2026-10-22",
+		devolvidoEm: null,
+	};
+
+	test("devolver encerra um empréstimo aberto com a data de hoje", () => {
+		expect(devolver(aberto, "2026-10-15")).toEqual({
+			ok: true,
+			value: { ...aberto, devolvidoEm: "2026-10-15" },
+		});
+	});
+
+	test("devolver recusa um empréstimo já devolvido", () => {
+		const devolvido = { ...aberto, devolvidoEm: "2026-10-15" };
+		expect(devolver(devolvido, "2026-10-16")).toEqual({
+			ok: false,
+			error: "JaDevolvido",
+		});
+	});
+
+	test("devolver aceita um empréstimo atrasado e registra o dia em que voltou", () => {
+		expect(devolver(aberto, "2026-10-30")).toEqual({
+			ok: true,
+			value: {
+				...aberto,
+				devolverEm: "2026-10-22",
+				devolvidoEm: "2026-10-30",
+			},
+		});
+	});
+});
+
+describe("mensagensDaDevolucao", () => {
+	test("mensagensDaDevolucao traz os textos do docs/03, literais", () => {
+		expect(mensagensDaDevolucao).toEqual({
+			JaDevolvido: "Este empréstimo já foi devolvido.",
+			NaoEncontrado: "Este exemplar não está emprestado a este membro.",
 			Falhou: "Não foi possível acessar o banco da biblioteca. Tente de novo.",
 		});
 	});

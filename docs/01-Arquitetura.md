@@ -39,11 +39,15 @@ src/features/emprestimos/
     regras.ts, repositorio.server.ts, rota.server.ts,
     regras.test.ts, eventosDeEmprestimo.test.ts,
     repositorio.server.test.ts, rota.server.test.ts
-src/features/emprestimos/devolucao/   devolver um exemplar
+src/features/emprestimos/devolucao/
+    TelaDeDevolucao.tsx, useDevolucao.ts, eventosDeDevolucao.ts,
+    eventosDeDevolucao.test.ts
 src/features/membros/     o que a biblioteca guarda sobre um membro
 src/features/catalogo/    livros e exemplares
 src/lib/                  o que não pertence a nenhuma feature, no segundo uso
 ```
+
+A devolução é uma subfatia do empréstimo (capítulo 6 do livro): a tela, o orquestrador do cliente e o do servidor ficam em `emprestimos/devolucao/`; a regra `devolver`, as funções `buscarEmprestimo` e `registrarDevolucao` do repositório e a rota `POST /api/emprestimos/devolucao` ficam nos arquivos da fatia do empréstimo, que emprestar e devolver compartilham, com os seus testes. A `TelaDeDevolucao` é a seção "Empréstimos abertos" da tela de empréstimo, renderizada pela `TelaDeEmprestimo` abaixo do formulário, que lhe passa os empréstimos abertos e o `depoisDeDevolver` do `useEmprestimo` (apaga o aviso do formulário e relê as três listas); não tem caminho próprio.
 
 Em `src/lib/`, cada arquivo diz num comentário onde estão o primeiro e o segundo uso:
 
@@ -65,7 +69,7 @@ Numa fatia, cada arquivo é uma peça:
 * `use<X>.ts`: o **orquestrador** do cliente, ao lado de `eventosDe<X>.ts`. É um hook React (`useCatalogo`, `useMembros`) que chama as rotas com `chamar` (`src/lib/chamar.ts`, sobre o `fetch`) e `await`, recarrega o que mostra depois de cada evento e publica o estado que a tela renderiza.
 * `regras.ts`: os **casos de uso**, funções puras e síncronas. O servidor impõe `emprestar`; o cliente importa `podePegarEmprestado` só para decidir o que mostrar.
 * `repositorio.server.ts`: o **repositório**, que recebe o `db` primeiro e, quando a leitura depende do dia, também `hoje`: `buscarMembro(db, id, hoje)`.
-* `rota.server.ts`: a rota Hono, que lê o relógio uma vez, monta os repositórios fechando sobre o `db` e chama o orquestrador. O catálogo e os membros montam os repositórios uma vez, em `rotaDoCatalogo(db)` e `rotaDeMembros(db)`; a do empréstimo os monta a cada requisição, dentro do handler, fechando sobre o `db` e o `hoje` daquela requisição (`buscarMembro: (id) => buscarMembro(db, id, hoje)`), porque o `hoje` muda de uma requisição para outra.
+* `rota.server.ts`: a rota Hono, que lê o relógio uma vez, monta os repositórios fechando sobre o `db` e chama o orquestrador. O catálogo e os membros montam os repositórios uma vez, em `rotaDoCatalogo(db)` e `rotaDeMembros(db)`; a do empréstimo os monta a cada requisição, dentro do handler, fechando sobre o `db` e o `hoje` daquela requisição (`buscarMembro: (id) => buscarMembro(db, id, hoje)`), porque o `hoje` muda de uma requisição para outra. Os `RepositoriosDeDevolucao` não leem `hoje` (a regra `devolver` o põe no `Emprestimo`), então a rota do empréstimo os monta uma vez, em `rotaDeEmprestimos(db, relogioDeTeste)`. O corpo dos dois `POST` do empréstimo, que têm a mesma forma, é lido por `lerPedido(c)`, no mesmo `rota.server.ts`.
 
 Um arquivo `.server.ts` roda só no servidor; o código do cliente nunca importa um deles. Os testes ficam ao lado do código que testam.
 

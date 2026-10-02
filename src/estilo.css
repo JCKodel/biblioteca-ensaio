@@ -171,7 +171,8 @@ body {
 @media (max-width: 600px) {
 	.cabecalho__faixa,
 	.livro,
-	.membro {
+	.membro,
+	.emprestimo {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: var(--espaco);
