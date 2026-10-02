@@ -6,7 +6,10 @@ export default defineConfig({
 	server: {
 		port: 5173,
 		strictPort: true,
-		proxy: { "/api": "http://localhost:3000" },
+		// O e2e passa PORTA_DO_SERVIDOR=3100, para não falar com o npm run dev.
+		proxy: {
+			"/api": `http://localhost:${process.env.PORTA_DO_SERVIDOR ?? 3000}`,
+		},
 	},
 	test: {
 		include: ["src/**/*.test.ts"],
