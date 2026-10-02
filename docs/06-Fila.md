@@ -22,7 +22,7 @@ pelo título ou pelo autor, vê os empréstimos de um membro com a data de devol
 de cada um, e um bibliotecário novo trabalha no primeiro dia só com o guia.
 
 ```
-[ ] dados-de-exemplo        um comando carrega livros, membros e três meses de empréstimos, para demonstração
+[x] dados-de-exemplo        um comando carrega livros, membros e três meses de empréstimos, para demonstração
 [ ] lista-de-atrasos        a bibliotecária vê os empréstimos vencidos
 [ ] busca-no-catalogo       a bibliotecária encontra um livro pelo título ou pelo autor
 [ ] emprestimos-do-membro   a página de um membro lista os empréstimos dele, com a data de devolução de cada um

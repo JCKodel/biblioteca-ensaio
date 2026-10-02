@@ -2,8 +2,10 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test, vi } from "vitest";
 import {
+	abrirBanco,
 	aplicarMigracoes,
 	lerMigracoes,
 	type Migracao,
@@ -117,5 +119,25 @@ describe("aplicarMigracoes", () => {
 				.prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
 				.all(),
 		).toEqual([{ name: "livro" }]);
+	});
+});
+
+describe("abrirBanco", () => {
+	test("abrirBanco com :memory: aplica as três migrações de migracoes/", () => {
+		const raiz = fileURLToPath(new URL("..", import.meta.url));
+		const db = abrirBanco(raiz, ":memory:");
+		expect(versao(db)).toBe(3);
+		expect(
+			db
+				.prepare(
+					"SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+				)
+				.all(),
+		).toEqual([
+			{ name: "emprestimo" },
+			{ name: "exemplar" },
+			{ name: "livro" },
+			{ name: "membro" },
+		]);
 	});
 });

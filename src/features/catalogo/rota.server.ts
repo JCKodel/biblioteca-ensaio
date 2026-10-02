@@ -6,13 +6,7 @@ import {
 	cadastroDeLivroPedido,
 } from "./eventosDeCatalogo.ts";
 import type { CadastroDeLivroPedido } from "./regras.ts";
-import {
-	buscarLivro,
-	inserirExemplar,
-	inserirLivro,
-	listarLivros,
-	type RepositoriosDoCatalogo,
-} from "./repositorio.server.ts";
+import { listarLivros, repositoriosDoCatalogo } from "./repositorio.server.ts";
 
 function campo(corpo: unknown, nome: keyof CadastroDeLivroPedido): string {
 	if (typeof corpo !== "object" || corpo === null) return "";
@@ -22,11 +16,7 @@ function campo(corpo: unknown, nome: keyof CadastroDeLivroPedido): string {
 
 /** As rotas do catálogo, montadas em /api/livros, fechando sobre o `db`. */
 export function rotaDoCatalogo(db: DatabaseSync): Hono {
-	const repositorios: RepositoriosDoCatalogo = {
-		inserirLivro: (dados) => inserirLivro(db, dados),
-		buscarLivro: (id) => buscarLivro(db, id),
-		inserirExemplar: (livroId) => inserirExemplar(db, livroId),
-	};
+	const repositorios = repositoriosDoCatalogo(db);
 	const rota = new Hono();
 
 	rota.get("/", (c) => {

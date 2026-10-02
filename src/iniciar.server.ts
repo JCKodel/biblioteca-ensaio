@@ -1,12 +1,11 @@
-import { mkdirSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
-import { aplicarMigracoes, lerMigracoes } from "./banco.server.ts";
+import { abrirBanco } from "./banco.server.ts";
 import { criarServidor } from "./servidor.server.ts";
 
-// Raiz de composição: o único lugar que abre o banco.
+// Raiz de composição do servidor. Abre o banco por `abrirBanco`, como a outra
+// raiz, o comando dos dados de exemplo (scripts/dadosDeExemplo.ts).
 // BANCO: caminho relativo à raiz do repositório, ou :memory: (o do e2e).
 // PORTA_DO_SERVIDOR: a porta do servidor (o e2e usa 3100).
 // RELOGIO_DE_TESTE: com o valor `cabecalho`, o `hoje` de cada requisição pode
@@ -16,13 +15,7 @@ const BANCO = process.env.BANCO ?? join("data", "biblioteca.sqlite");
 const PORTA = Number(process.env.PORTA_DO_SERVIDOR ?? 3000);
 const RELOGIO_DE_TESTE = process.env.RELOGIO_DE_TESTE === "cabecalho";
 
-let caminho = BANCO;
-if (BANCO !== ":memory:") {
-	caminho = resolve(raiz, BANCO);
-	mkdirSync(dirname(caminho), { recursive: true });
-}
-const db = new DatabaseSync(caminho);
-aplicarMigracoes(db, lerMigracoes(join(raiz, "migracoes")));
+const db = abrirBanco(raiz, BANCO);
 
 const app = criarServidor(db, { relogioDeTeste: RELOGIO_DE_TESTE });
 

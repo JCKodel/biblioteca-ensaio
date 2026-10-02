@@ -14,7 +14,9 @@
 		"test": "vitest run",
 		"e2e": "playwright test",
 		"build": "vite build",
-		"verify": "node scripts/verificar.ts"
+		"verify": "node scripts/verificar.ts",
+		"dados-de-exemplo": "node scripts/dadosDeExemplo.ts",
+		"dados-de-exemplo:apagar": "node scripts/dadosDeExemplo.ts --apagar"
 	},
 	"dependencies": {
 		"@hono/node-server": "^2.1.3",
