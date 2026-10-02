@@ -3,7 +3,7 @@
 ## Línguas
 
 * **Documentação:** português do Brasil, incluindo os nomes dos documentos (`00-Produto.md` a `06-Fila.md`), as páginas em `work/` e os ADRs.
-* **Identificadores:** português, sem acento (`Emprestimo`, `devolverEm`, `podePegarEmprestado`), como no livro (ADR-0004). Ficam em inglês as palavras da linguagem, os nomes das bibliotecas, `Result`, `ok`, `err`, `value`, `error`, as pastas `features/` e `src/lib/`, e o sufixo `.server.ts`.
+* **Identificadores:** português, sem acento (`Emprestimo`, `devolverEm`, `podePegarEmprestado`), como no livro (ADR-0004). Ficam em inglês as palavras da linguagem, os nomes das bibliotecas, `Result`, `ok`, `err`, `value`, `error`, as pastas `features/` e `src/lib/`, o sufixo `.server.ts` e o prefixo `use` dos hooks React (`useCatalogo`), porque o React e o Biome só reconhecem um hook por ele.
 * **Texto que o usuário lê:** português do Brasil; as mensagens fixas estão no docs/03. Nenhum travessão em texto que um usuário lê.
 
 ## Nomes
@@ -11,7 +11,7 @@
 * Tipos e componentes em PascalCase: `Emprestimo`, `TelaDeEmprestimo`.
 * Funções e variáveis em camelCase: `emprestar`, `buscarMembro`, `hoje`.
 * Constantes de domínio em MAIÚSCULAS_COM_SUBLINHADO: `DIAS_DE_EMPRESTIMO`.
-* Arquivos de uma fatia como no capítulo 6 do livro: `TelaDe<X>.tsx`, `eventosDe<X>.ts`, `regras.ts`, `repositorio.server.ts`, `rota.server.ts`; testes `<arquivo>.test.ts` ao lado.
+* Arquivos de uma fatia como no capítulo 6 do livro: `TelaDe<X>.tsx`, `eventosDe<X>.ts`, `regras.ts`, `repositorio.server.ts`, `rota.server.ts`; o orquestrador do cliente em `use<X>.ts` (`useCatalogo.ts`); testes `<arquivo>.test.ts` ao lado.
 * Tabelas e colunas em snake_case, português, sem acento, no singular: `emprestimo`, `devolver_em`.
 * Pastas de feature no plural, pelo termo do docs/03: `emprestimos/`, `membros/`, `catalogo/`.
 * Slugs de entrega em minúsculas unidas por hífens: `emprestar-livro`.
@@ -24,7 +24,7 @@
 
 ## Estilo visual
 
-Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
+Não há arquivo de design. A referência são as capturas `work/done/esqueleto-390.png` e `work/done/esqueleto-1280.png` (o cabeçalho), `work/done/catalogo-390.png` e `work/done/catalogo-1280.png` (um formulário e uma lista) e as variáveis de `src/estilo.css`, um só arquivo CSS, sem biblioteca de CSS nem de componentes:
 
 | Variável | Valor |
 |---|---|
@@ -34,9 +34,15 @@ Não há arquivo de design. A referência são as capturas `work/done/esqueleto-
 | `--cor-do-texto` | `#1a1a1a`, sobre `--cor-do-fundo` `#ffffff` (contraste 17,4:1) |
 | `--cor-de-destaque` | `#1f5f8b`, a faixa do cabeçalho, com `--cor-do-texto-no-destaque` `#ffffff` (contraste 6,8:1) |
 | `--margem` | `16px` |
-| `--largura-maxima` | `960px`, o conteúdo centrado |
+| `--largura-maxima` | `960px`, o conteúdo centrado, alinhado com o título do cabeçalho |
+| `--cor-da-borda` | `#767676`, a borda dos campos (contraste 4,5:1) |
+| `--cor-da-divisoria` | `#dddddd`, a linha entre os itens de uma lista |
+| `--cor-do-aviso` | `#a4262c`, o texto de uma recusa ou falha (contraste 7,3:1) |
+| `--espaco` | `8px`, o espaço dentro de um campo, de um botão e entre as linhas de uma lista |
+| `--raio` | `4px`, o canto de campos e botões |
+| `--largura-do-formulario` | `480px`, a largura máxima de um formulário |
 
-O título do cabeçalho tem `1.5rem`. Sem modo escuro, ícone nem fonte da web.
+O título do cabeçalho tem `1.5rem`; o título de uma seção (`h2`), `1.25rem`. Um formulário tem os campos um abaixo do outro, com o rótulo acima; um botão tem o fundo `--cor-de-destaque` e o texto `--cor-do-texto-no-destaque`. Uma lista é feita de linhas simples, separadas por `--cor-da-divisoria`, com o botão da linha à direita; abaixo de `600px` de largura (um valor fixo, porque uma media query não lê variável) o botão desce para baixo do texto. Sem modo escuro, ícone nem fonte da web.
 
 ## Testes
 
@@ -52,6 +58,7 @@ Um teste para cada peça (capítulo 8 do livro). Um teste troca só o I/O e o re
 * Vitest roda os testes unitários no Node; Playwright roda os ponta a ponta num navegador real.
 * O nome de um teste é uma frase em português da regra: `emprestar recusa um membro com um livro atrasado`.
 * O teste é visto vermelho antes do código que o faz passar.
+* Um teste ponta a ponta não supõe o banco vazio nem a posição de uma linha: os dois projetos (390 e 1280) gravam no mesmo servidor ao mesmo tempo, então cada teste cria o que usa com um nome único e o acha pelo nome.
 
 ## Commit
 

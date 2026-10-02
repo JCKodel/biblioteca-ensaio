@@ -8,6 +8,12 @@
 	--cor-do-texto-no-destaque: #ffffff;
 	--margem: 16px;
 	--largura-maxima: 960px;
+	--cor-da-borda: #767676;
+	--cor-da-divisoria: #dddddd;
+	--cor-do-aviso: #a4262c;
+	--espaco: 8px;
+	--raio: 4px;
+	--largura-do-formulario: 480px;
 }
 
 *,
@@ -42,6 +48,91 @@ body {
 	line-height: 1.25;
 }
 
+/* A margem fica por fora da largura máxima, para o conteúdo alinhar com o
+   título do cabeçalho. */
 .conteudo {
+	max-width: calc(var(--largura-maxima) + 2 * var(--margem));
 	padding: var(--margem);
+}
+
+.formulario {
+	display: flex;
+	flex-direction: column;
+	gap: var(--margem);
+	max-width: var(--largura-do-formulario);
+}
+
+.campo {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--espaco) / 2);
+}
+
+.campo__entrada {
+	font: inherit;
+	padding: var(--espaco);
+	border: 1px solid var(--cor-da-borda);
+	border-radius: var(--raio);
+	width: 100%;
+}
+
+.botao {
+	font: inherit;
+	padding: var(--espaco) var(--margem);
+	border: none;
+	border-radius: var(--raio);
+	background: var(--cor-de-destaque);
+	color: var(--cor-do-texto-no-destaque);
+	cursor: pointer;
+	align-self: flex-start;
+	white-space: nowrap;
+}
+
+.botao:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.aviso {
+	color: var(--cor-do-aviso);
+}
+
+.catalogo__titulo {
+	font-size: 1.25rem;
+	margin: calc(var(--margem) * 2) 0 var(--espaco);
+}
+
+.livros {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.livro {
+	display: flex;
+	align-items: center;
+	gap: var(--margem);
+	padding: var(--espaco) 0;
+	border-bottom: 1px solid var(--cor-da-divisoria);
+}
+
+.livro__texto {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.livro__titulo {
+	font-weight: 600;
+}
+
+/* Abaixo de 600px o botão desce para baixo do texto (docs/04 §Estilo visual). */
+@media (max-width: 600px) {
+	.livro {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--espaco);
+	}
 }

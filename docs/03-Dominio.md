@@ -31,6 +31,18 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | orquestrador do empréstimo | `emprestimoPedido(evento, hoje, repositorios)` | Transforma um `EmprestimoPedido` em um `EstadoDoEmprestimo`. |
 | estado do empréstimo | `EstadoDoEmprestimo`, campo `tipo`: `Emprestado` \| `Recusado` \| `Falhou` | O que o orquestrador publica depois de um pedido. |
 | repositórios do empréstimo | `RepositoriosDeEmprestimo`: `buscarMembro`, `buscarExemplar`, `inserirEmprestimo` | As funções de busca e gravação que o orquestrador recebe. |
+| catálogo | (os livros e os seus exemplares); a fatia `catalogo/` | O que a biblioteca tem na estante, cadastrado pelo bibliotecário. |
+| título, autor, ano | `titulo`, `autor`, `ano` | Os dados de um livro. Título e autor são obrigatórios; o ano é opcional (`null` quando não informado). |
+| dados do livro | `DadosDoLivro`, `{ titulo, autor, ano }` | O que o bibliotecário informou sobre um livro, já aparado e validado; `ano` é `number \| null`. |
+| validar livro | `validarLivro(pedido)` | O caso de uso que confere um `CadastroDeLivroPedido`: devolve `DadosDoLivro` ou uma `RecusaDeLivro`. |
+| recusa de livro | `RecusaDeLivro = "TituloInvalido" \| "AutorInvalido" \| "AnoInvalido"` | Os dados do livro não servem. Nada falhou. |
+| livro do catálogo | `LivroDoCatalogo`, `{ id, titulo, autor, ano, totalDeExemplares }` | Um livro como a lista do catálogo o mostra, com quantos exemplares ele tem. |
+| texto de exemplares | `textoDeExemplares(total)` | O caso de uso que escreve a quantidade de exemplares de um livro: "nenhum exemplar", "1 exemplar", "2 exemplares". |
+| pedido de cadastro de livro | `CadastroDeLivroPedido`, `{ titulo, autor, ano }`, as três strings como foram digitadas | O evento que a tela do catálogo dispara para cadastrar um livro. |
+| pedido de cadastro de exemplar | `CadastroDeExemplarPedido`, `{ livroId }` | O evento que a tela do catálogo dispara para acrescentar um exemplar a um livro. |
+| orquestradores do catálogo | `cadastroDeLivroPedido(evento, repositorios)`, `cadastroDeExemplarPedido(evento, repositorios)` | Transformam cada pedido em um `EstadoDoCadastroDeLivro` ou um `EstadoDoCadastroDeExemplar`. |
+| estados do cadastro | `EstadoDoCadastroDeLivro` e `EstadoDoCadastroDeExemplar`, campo `tipo`: `Cadastrado` \| `Recusado` \| `Falhou` | O que cada orquestrador do catálogo publica depois de um pedido. |
+| repositórios do catálogo | `RepositoriosDoCatalogo`: `inserirLivro`, `buscarLivro`, `inserirExemplar`; e `listarLivros` | As funções de busca e gravação do catálogo. |
 
 ## Mensagens ao usuário
 
@@ -42,10 +54,14 @@ Escritas uma vez, aqui, e usadas literalmente:
 | `JaEmprestado` | Este exemplar acabou de ser emprestado a outra pessoa. |
 | `MembroSuspenso` | A sua matrícula está suspensa. |
 | `Falhou` | Não foi possível acessar o banco da biblioteca. Tente de novo. |
+| `TituloInvalido` | Informe o título, com até 200 caracteres. |
+| `AutorInvalido` | Informe o autor, com até 200 caracteres. |
+| `AnoInvalido` | O ano é um número de até quatro algarismos, ou fica em branco. |
+| `NaoEncontrado`, de um livro | Este livro não está no catálogo. |
 
 ## Entidades
 
-* **Livro:** `id`. Os demais campos (título, autor) entram aqui pela entrega `catalogo`, antes do código.
+* **Livro:** `id`, `titulo`, `autor`, `ano`. Título e autor são aparados e têm de 1 a 200 caracteres; `ano`, quando informado, é um inteiro de 1 a 9999, e senão é `null`. Dois livros podem ter o mesmo título e o mesmo autor.
 * **Exemplar:** `id`, `livroId`. Pertence a um livro.
 * **Membro:** `id`, `emAtraso`, `suspenso`. `emAtraso` não é guardado: o repositório o calcula com `hoje`. Os demais campos (nome) entram aqui pela entrega `membros`.
 * **Emprestimo:** um exemplar, um membro, o dia do empréstimo, `devolverEm`, e a devolução quando houver. Os nomes exatos dos campos entram aqui pela entrega `emprestar-livro`.
