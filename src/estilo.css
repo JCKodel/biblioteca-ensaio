@@ -121,21 +121,28 @@ body {
 	color: var(--cor-do-aviso);
 }
 
+.formulario__nota {
+	margin: 0;
+}
+
 .catalogo__titulo,
-.membros__titulo {
+.membros__titulo,
+.emprestimos__titulo {
 	font-size: 1.25rem;
 	margin: calc(var(--margem) * 2) 0 var(--espaco);
 }
 
 .livros,
-.membros__lista {
+.membros__lista,
+.emprestimos__lista {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
 .livro,
-.membro {
+.membro,
+.emprestimo {
 	display: flex;
 	align-items: center;
 	gap: var(--margem);
@@ -144,7 +151,8 @@ body {
 }
 
 .livro__texto,
-.membro__texto {
+.membro__texto,
+.emprestimo__texto {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
@@ -153,7 +161,8 @@ body {
 }
 
 .livro__titulo,
-.membro__nome {
+.membro__nome,
+.emprestimo__exemplar {
 	font-weight: 600;
 }
 

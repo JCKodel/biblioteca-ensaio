@@ -35,10 +35,10 @@ As pastas são por feature, não por camada (capítulo 6 do livro):
 
 ```text
 src/features/emprestimos/
-    TelaDeEmprestimo.tsx, eventosDeEmprestimo.ts, regras.ts,
-    repositorio.server.ts, rota.server.ts,
+    TelaDeEmprestimo.tsx, useEmprestimo.ts, eventosDeEmprestimo.ts,
+    regras.ts, repositorio.server.ts, rota.server.ts,
     regras.test.ts, eventosDeEmprestimo.test.ts,
-    repositorio.server.test.ts
+    repositorio.server.test.ts, rota.server.test.ts
 src/features/emprestimos/devolucao/   devolver um exemplar
 src/features/membros/     o que a biblioteca guarda sobre um membro
 src/features/catalogo/    livros e exemplares
@@ -54,6 +54,7 @@ Em `src/lib/`, cada arquivo diz num comentário onde estão o primeiro e o segun
 | `estadoDe.ts` | `estadoDe`, que separa uma recusa (string) de uma falha (objeto com `codigo`) | `cadastroDeExemplarPedido` | `suspensaoPedida` |
 | `chamar.ts` | `chamar` e `Resposta`, a borda do cliente com a rede: um servidor que não responde ou uma resposta que não é JSON vira `null` | `useCatalogo` | `useMembros` |
 | `mensagemDeFalha.ts` | `MENSAGEM_DE_FALHA`, a frase de `Falhou` do docs/03; sem I/O, porque `regras.ts` é puro e o servidor o importa | `catalogo/regras.ts` | `membros/regras.ts` |
+| `falhou.server.ts` | `falhou(c, excecao)`, que escreve a `mensagem` no terminal e responde `500`, `{"falha":"BancoDeDadosFalhou"}` | `catalogo/rota.server.ts` | `membros/rota.server.ts`, onde já devia ter saído; veio no terceiro, `emprestimos/rota.server.ts` |
 
 Ficam em cada arquivo de teste `naoEsperado` e `falsos` (este, tipado pelos repositórios de cada fatia), como no capítulo 8 do livro.
 
@@ -63,8 +64,8 @@ Numa fatia, cada arquivo é uma peça:
 * `eventosDe<X>.ts`: o **orquestrador** do servidor. O handler da rota chama um orquestrador **síncrono**, como no capítulo 7: `emprestimoPedido(evento, hoje, repositorios)`, com `RepositoriosDeEmprestimo` obrigatório, e `estadoDe` para separar um `Recusado` de um `Falhou`.
 * `use<X>.ts`: o **orquestrador** do cliente, ao lado de `eventosDe<X>.ts`. É um hook React (`useCatalogo`, `useMembros`) que chama as rotas com `chamar` (`src/lib/chamar.ts`, sobre o `fetch`) e `await`, recarrega o que mostra depois de cada evento e publica o estado que a tela renderiza.
 * `regras.ts`: os **casos de uso**, funções puras e síncronas. O servidor impõe `emprestar`; o cliente importa `podePegarEmprestado` só para decidir o que mostrar.
-* `repositorio.server.ts`: o **repositório**, que recebe o `db`: `buscarMembro(db, id)`.
-* `rota.server.ts`: a rota Hono, que lê o relógio uma vez, monta os repositórios fechando sobre o `db` e chama o orquestrador.
+* `repositorio.server.ts`: o **repositório**, que recebe o `db` primeiro e, quando a leitura depende do dia, também `hoje`: `buscarMembro(db, id, hoje)`.
+* `rota.server.ts`: a rota Hono, que lê o relógio uma vez, monta os repositórios fechando sobre o `db` e chama o orquestrador. O catálogo e os membros montam os repositórios uma vez, em `rotaDoCatalogo(db)` e `rotaDeMembros(db)`; a do empréstimo os monta a cada requisição, dentro do handler, fechando sobre o `db` e o `hoje` daquela requisição (`buscarMembro: (id) => buscarMembro(db, id, hoje)`), porque o `hoje` muda de uma requisição para outra.
 
 Um arquivo `.server.ts` roda só no servidor; o código do cliente nunca importa um deles. Os testes ficam ao lado do código que testam.
 
@@ -77,8 +78,9 @@ O capítulo 6 do livro mostra o mesmo orquestrador assíncrono e com repositóri
 ## Como os dados são acessados
 
 * **Raiz de composição:** o início do servidor abre o banco (`DatabaseSync`), aplica as migrações em ordem e repassa o `db`. Nenhum outro código abre o banco.
-* Cada repositório recebe o `db` como primeiro parâmetro; a rota fecha sobre ele para montar o objeto de repositórios que o orquestrador recebe.
+* Cada repositório recebe o `db` como primeiro parâmetro; a rota fecha sobre ele para montar o objeto de repositórios que o orquestrador recebe. O repositório do empréstimo recebe também `hoje` (`buscarMembro(db, id, hoje)`, `listarMembrosDoEmprestimo(db, hoje)`), e a rota fecha sobre os dois, por requisição.
 * `emAtraso` é calculado pelo repositório com `hoje`: os empréstimos abertos do membro com `devolver_em < hoje`.
+* **O relógio:** `lerHoje(xHoje, relogioDeTeste)`, em `src/features/emprestimos/rota.server.ts`, é o único lugar que lê a data. Ele devolve a data local da máquina do servidor (`getFullYear`, `getMonth() + 1`, `getDate()`; não `toISOString`, que dá o dia de Greenwich). Só com o relógio de teste ligado um cabeçalho `x-hoje` presente vale como `hoje`, se for um dia que existe; senão é `HojeInvalido`, `400`, sem tocar o banco. Nenhuma regra, orquestrador ou repositório sabe do cabeçalho.
 * O que o servidor guarda e garante está no docs/02.
 
 ## Como os erros trafegam
@@ -96,9 +98,9 @@ Exceções como valores (capítulo 5 do livro):
 * **Local**, a máquina do desenvolvedor (Windows, macOS ou Linux): o cliente, o servidor e o banco SQLite em arquivo. É o único ambiente. `npm run dev` o sobe num terminal só: o Vite em `http://localhost:5173`, que repassa `/api` ao servidor, e o servidor Hono em `http://localhost:3000` (`node --watch src/iniciar.server.ts`), os dois pelo `concurrently`; fechar o comando encerra os dois. Na partida, o servidor cria `data/biblioteca.sqlite` (ignorado pelo git) e aplica as migrações pendentes (docs/02 §Esquema).
 * **O e2e**, dentro do mesmo ambiente local: `npm run e2e` sobe, pelo `webServer` do `playwright.config.ts`, um servidor e um cliente próprios, o servidor em `http://localhost:3100` com um banco em memória (`:memory:`) e o Vite em `http://localhost:5174`, com `reuseExistingServer: false`. Ele roda com o `npm run dev` aberto sem gravar no banco dele, e começa vazio a cada rodada.
 
-Duas variáveis de ambiente opcionais, lidas por `src/iniciar.server.ts`, separam os dois: `BANCO`, o arquivo do banco relativo à raiz do repositório, ou `:memory:` (padrão `data/biblioteca.sqlite`), e `PORTA_DO_SERVIDOR` (padrão `3000`), que o `vite.config.ts` também lê para repassar `/api`. Só o `webServer` do Playwright as passa, pelo `env`, igual em todo sistema; nenhum script do `package.json` as usa (ADR-0005).
+Três variáveis de ambiente opcionais, lidas por `src/iniciar.server.ts`, separam os dois: `BANCO`, o arquivo do banco relativo à raiz do repositório, ou `:memory:` (padrão `data/biblioteca.sqlite`); `PORTA_DO_SERVIDOR` (padrão `3000`), que o `vite.config.ts` também lê para repassar `/api`; e `RELOGIO_DE_TESTE`, que com o valor `cabecalho` liga o relógio de teste: o cabeçalho `x-hoje: AAAA-MM-DD` de cada requisição dá o `hoje` dela (docs/03). Ausente ou com outro valor, o cabeçalho é ignorado. Só o `webServer` do Playwright as passa, pelo `env`, igual em todo sistema; `RELOGIO_DE_TESTE` só no do servidor. Nenhum script do `package.json` as usa (ADR-0005), então o `npm run dev` nunca tem o relógio de teste. O proxy do Vite repassa os cabeçalhos do pedido sem filtrar, `x-hoje` incluído; o e2e que recusa um membro atrasado é a prova.
 
-O servidor roda TypeScript pelo próprio Node, que remove os tipos, sem `tsx` nem passo de build; o `npm run build` é só o do cliente, para `dist/`. A raiz de composição é `src/iniciar.server.ts`, e `src/servidor.server.ts` monta o app Hono (`criarServidor(db)`) onde as rotas das fatias se montam.
+O servidor roda TypeScript pelo próprio Node, que remove os tipos, sem `tsx` nem passo de build; o `npm run build` é só o do cliente, para `dist/`. A raiz de composição é `src/iniciar.server.ts`, e `src/servidor.server.ts` monta o app Hono (`criarServidor(db, opcoes?)`, com `opcoes.relogioDeTeste` falso por padrão) onde as rotas das fatias se montam; a raiz de composição passa `{ relogioDeTeste: process.env.RELOGIO_DE_TESTE === "cabecalho" }`.
 
 Não há produção nem homologação no Marco 1.
 

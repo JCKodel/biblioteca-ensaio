@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import { type Context, Hono } from "hono";
-import type { BancoDeDadosFalhou } from "../../lib/consultar.server.ts";
+import { falhou } from "../../lib/falhou.server.ts";
 import {
 	cadastroDeMembroPedido,
 	type EstadoDaSuspensao,
@@ -12,11 +12,6 @@ import {
 	listarMembros,
 	type RepositoriosDeMembros,
 } from "./repositorio.server.ts";
-
-function falhou(c: Context, excecao: BancoDeDadosFalhou) {
-	console.error(excecao.mensagem);
-	return c.json({ falha: "BancoDeDadosFalhou" }, 500);
-}
 
 function nome(corpo: unknown): string {
 	if (typeof corpo !== "object" || corpo === null) return "";

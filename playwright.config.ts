@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 // O e2e tem servidor, cliente e banco próprios (porta 3100, porta 5174,
 // :memory:), e nunca reaproveita o npm run dev nem grava no banco dele. As
 // variáveis vão pelo env do webServer, igual em todo sistema (ADR-0005).
+// RELOGIO_DE_TESTE liga o cabeçalho x-hoje, só aqui.
 export default defineConfig({
 	testDir: "e2e",
 	testMatch: "*.spec.ts",
@@ -14,7 +15,11 @@ export default defineConfig({
 	webServer: [
 		{
 			command: "node src/iniciar.server.ts",
-			env: { BANCO: ":memory:", PORTA_DO_SERVIDOR: "3100" },
+			env: {
+				BANCO: ":memory:",
+				PORTA_DO_SERVIDOR: "3100",
+				RELOGIO_DE_TESTE: "cabecalho",
+			},
 			url: "http://localhost:3100/api/saude",
 			reuseExistingServer: false,
 		},

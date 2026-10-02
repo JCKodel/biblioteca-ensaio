@@ -4,6 +4,9 @@ import { err, ok, type Result } from "../../lib/result.ts";
 /** Um membro como o cadastro o guarda e a lista o mostra (docs/03). */
 export type MembroDoCadastro = { id: string; nome: string; suspenso: boolean };
 
+/** O recorte do membro que a regra do empréstimo lê (docs/03); `buscarMembro` o monta. */
+export type Membro = { id: string; emAtraso: number; suspenso: boolean };
+
 /** Como a bibliotecária digitou. */
 export type CadastroDeMembroPedido = { nome: string };
 export type DadosDoMembro = { nome: string };

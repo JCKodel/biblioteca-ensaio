@@ -17,7 +17,7 @@ Migrações em arquivos SQL numerados, aplicadas em ordem na partida do servidor
 * **O controle:** a última migração aplicada é anotada em `PRAGMA user_version`, sem tabela de controle. Na partida, `aplicarMigracoes` (`src/banco.server.ts`) roda, em ordem, as de número acima dele, cada uma numa transação com a sua anotação, e escreve no terminal o nome de cada uma antes de rodá-la.
 * **Uma migração com erro** derruba a partida: o executor não captura exceções, o terminal mostra o nome do arquivo e o erro do SQLite, e o SQLite desfaz a transação aberta, então nada dela fica gravado.
 * **O banco:** aberto com `DatabaseSync` só em `src/iniciar.server.ts`, com as chaves estrangeiras ligadas (o padrão do `DatabaseSync`). A variável de ambiente opcional `BANCO` o escolhe: um caminho relativo à raiz do repositório, ou `:memory:`, um banco em memória que começa vazio e não cria a pasta `data/` (o do e2e, docs/01 §Ambientes). Sem ela, é `data/biblioteca.sqlite`.
-* **Hoje:** `user_version` 2, com a `0001-catalogo.sql` e a `0002-membros.sql`.
+* **Hoje:** `user_version` 3, com a `0001-catalogo.sql`, a `0002-membros.sql` e a `0003-emprestimos.sql`.
 
 As tabelas, por migração:
 
@@ -26,15 +26,13 @@ As tabelas, por migração:
 | `0001-catalogo.sql` | `livro` | `id` `INTEGER PRIMARY KEY`, `titulo` `TEXT NOT NULL`, `autor` `TEXT NOT NULL`, `ano` `INTEGER` anulável | `catalogo` |
 | `0001-catalogo.sql` | `exemplar` | `id` `INTEGER PRIMARY KEY`, `livro_id` `INTEGER NOT NULL REFERENCES livro (id)`, com o índice `exemplar_livro_id` | `catalogo` |
 | `0002-membros.sql` | `membro` | `id` `INTEGER PRIMARY KEY`, `nome` `TEXT NOT NULL`, `suspenso` `INTEGER NOT NULL DEFAULT 0` | `membros` |
+| `0003-emprestimos.sql` | `emprestimo` | `id` `INTEGER PRIMARY KEY`, `exemplar_id` `INTEGER NOT NULL REFERENCES exemplar (id)`, `membro_id` `INTEGER NOT NULL REFERENCES membro (id)`, `emprestado_em` `TEXT NOT NULL`, `devolver_em` `TEXT NOT NULL`, `devolvido_em` `TEXT` anulável; o índice único `emprestimo_aberto_por_exemplar` em `exemplar_id` onde `devolvido_em IS NULL`, e o índice `emprestimo_membro_id` | `emprestar-livro` |
 
 Os ids são gerados pelo SQLite e viram `string` no código e no JSON (`"7"`); o repositório converte nas duas direções. Os limites de título, autor e ano ficam na regra (`validarLivro`, docs/03), não no banco. Dois livros podem ter o mesmo título e o mesmo autor.
 
-O SQLite não tem booleano: o repositório dos membros grava `suspenso` como `0` ou `1` e o lê como `boolean`, no mesmo lugar em que converte o id. O limite do nome fica na regra (`cadastrar`, docs/03), não no banco; dois membros podem ter o mesmo nome. A matrícula que a tela mostra é o `id` do membro, e a `emprestimo.membro_id` da entrega `emprestar-livro` vai referenciá-lo.
+O SQLite não tem booleano: o repositório dos membros grava `suspenso` como `0` ou `1` e o lê como `boolean`, no mesmo lugar em que converte o id. O limite do nome fica na regra (`cadastrar`, docs/03), não no banco; dois membros podem ter o mesmo nome. A matrícula que a tela mostra é o `id` do membro, e a `emprestimo.membro_id` o referencia.
 
-A tabela de empréstimos, como o livro a desenha (capítulo 14), chega com a entrega `emprestar-livro`:
-
-* `emprestimo` (`exemplar_id`, `membro_id`, `emprestado_em`, `devolver_em`, `devolvido_em` anulável);
-* índice único em `exemplar_id` onde `devolvido_em` é nulo.
+As datas do empréstimo são `TEXT` `YYYY-MM-DD` (docs/03), que o SQLite compara na ordem certa: `emAtraso` é a contagem dos empréstimos abertos do membro com `devolver_em < hoje`, feita pelo repositório a cada leitura e nunca guardada. O `id` do empréstimo fica no banco e não entra no `Emprestimo` (docs/03 §Entidades): o empréstimo aberto se acha pelo exemplar, que tem no máximo um, pelo índice único. O repositório transforma a violação desse índice, a mensagem do SQLite `UNIQUE constraint failed: emprestimo.exemplar_id`, em `JaEmprestado`; qualquer outra falha, inclusive a de uma chave estrangeira, continua `BancoDeDadosFalhou`.
 
 ## Regras de acesso
 
@@ -54,7 +52,11 @@ As rotas de cada fatia, em `rota.server.ts`. Cada rota e o formato do seu pedido
 | `POST /api/membros`, JSON `CadastroDeMembroPedido` | `201`, `MembroDoCadastro`; `400`, `{"recusa":"NomeInvalido"}` | `membros` |
 | `POST /api/membros/:membroId/suspensao`, sem corpo | `200`, `MembroDoCadastro` suspenso; `404`, `{"recusa":"NaoEncontrado"}` | `membros` |
 | `POST /api/membros/:membroId/reativacao`, sem corpo | `200`, `MembroDoCadastro` ativo; `404`, `{"recusa":"NaoEncontrado"}` | `membros` |
+| `GET /api/emprestimos` | `200`, `EmprestimoAberto[]`, do empréstimo mais recente para o mais antigo | `emprestar-livro` |
+| `GET /api/emprestimos/exemplares` | `200`, `ExemplarDisponivel[]`, os exemplares sem empréstimo aberto, por título e depois id | `emprestar-livro` |
+| `GET /api/emprestimos/membros` | `200`, `MembroDoEmprestimo[]`, todos os membros por nome e depois id, com `emAtraso` do `hoje` lido; `400`, `{"falha":"HojeInvalido"}` | `emprestar-livro` |
+| `POST /api/emprestimos`, JSON `EmprestimoPedido` | `201`, `Emprestimo`; `409`, `{"recusa": RecusaDeEmprestimo}`; `404`, `{"recusa":"NaoEncontrado"}`; `400`, `{"falha":"HojeInvalido"}` | `emprestar-livro` |
 
-Numa rota que toca o banco, uma falha dele responde `500`, `{"falha":"BancoDeDadosFalhou"}`, depois de o servidor escrever a mensagem do SQLite no terminal; a mensagem não vai na resposta. No `POST /api/livros`, um campo ausente ou que não é string é lido como string vazia, e um corpo que não é JSON é lido como um pedido vazio (`400`, `TituloInvalido`). No `POST /api/membros`, do mesmo jeito, um `nome` ausente ou que não é string é lido como string vazia e um corpo que não é JSON como pedido vazio (`400`, `NomeInvalido`). Suspender um membro já suspenso, ou reativar um já ativo, responde `200` com a situação gravada, sem recusa.
+Numa rota que toca o banco, uma falha dele responde `500`, `{"falha":"BancoDeDadosFalhou"}`, depois de o servidor escrever a mensagem do SQLite no terminal; a mensagem não vai na resposta. No `POST /api/livros`, um campo ausente ou que não é string é lido como string vazia, e um corpo que não é JSON é lido como um pedido vazio (`400`, `TituloInvalido`). No `POST /api/membros`, do mesmo jeito, um `nome` ausente ou que não é string é lido como string vazia e um corpo que não é JSON como pedido vazio (`400`, `NomeInvalido`). Suspender um membro já suspenso, ou reativar um já ativo, responde `200` com a situação gravada, sem recusa. No `POST /api/emprestimos`, um `exemplarId` ou `membroId` ausente ou que não é string é lido como string vazia, e um corpo que não é JSON como pedido vazio (`404`, `NaoEncontrado`). As três recusas do empréstimo respondem `409`: o estado do membro ou do exemplar impede, e não os dados do pedido. O `POST /api/emprestimos` e o `GET /api/emprestimos/membros` leem `hoje` uma vez, na chegada, por `lerHoje` (docs/01); `x-hoje` só conta com o relógio de teste ligado (docs/03), e `HojeInvalido` é uma `falha` de um pedido de teste mal formado, não uma regra da biblioteca.
 
 O cliente chama por `http://localhost:5173/api/...`, que o Vite repassa ao servidor em `http://localhost:3000` (ou na porta de `PORTA_DO_SERVIDOR`, docs/01 §Ambientes).
