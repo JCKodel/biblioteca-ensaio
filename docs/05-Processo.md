@@ -39,7 +39,22 @@ Depois do /apply, a página também registra o que aconteceu: o que divergiu, o 
 
 ## 4. A fila
 
-docs/06: uma linha por entrega, em ordem, sob marcos. A linha nunca sai da fila; ela muda de marca: `[ ]` não definida, `[>]` definida e não construída, `[x]` feita. Cada marco é planejado com a sua revisão como última linha (§8). Editada por conversa, em qualquer sessão.
+docs/06: uma linha por entrega, em ordem, sob marcos. A linha nunca sai da fila; ela muda de marca, no momento em que o trabalho muda, para que a fila mostre o que está acontecendo enquanto acontece:
+
+| Marca | Significa | Quem põe |
+|---|---|---|
+| `[ ]` | não definida | a conversa que acrescenta a linha |
+| `[~]` | sendo definida | o /propose, quando começa |
+| `[>]` | definida: `work/<slug>.md` existe | o /propose, quando a página está escrita |
+| `[*]` | sendo construída | o /apply, quando começa |
+| `[x]` | feita: a página está em `work/done/` | o /apply, com a verificação verde |
+| `[?]` | esperando | qualquer sessão, nos três casos abaixo |
+
+Uma linha espera quando a pessoa diz que ela está travada, quando precisa de uma resposta que foi pedida e não veio, ou quando precisa de outra linha feita antes, como uma correção encontrada no meio de um /apply. O motivo vai no fim da linha, em inglês, como o kit o escreve: `· blocked: <motivo>` ou `· blocked: after <slug>, <slug>`. Qualquer marca antes de `[x]` pode virar `[?]`. A linha sai de `[?]` quando o motivo se resolve: a pessoa diz, a sessão que registra a resposta tira a marca, ou o /apply a tira quando marca `[x]` a última linha de um `after`. Ela volta para `[>]` quando a página dela existe, e para `[ ]` quando não existe, e o próximo comando a marca de novo.
+
+As linhas do Marco 1 e a `dados-de-exemplo` foram feitas antes destas seis marcas, com `[ ]`, `[>]` e `[x]`; elas significam o mesmo.
+
+Cada marco é planejado com a sua revisão como última linha (§8). Editada por conversa, em qualquer sessão.
 
 ## 5. Este projeto
 
@@ -49,6 +64,7 @@ docs/06: uma linha por entrega, em ordem, sob marcos. A linha nunca sai da fila;
   * Local, a máquina do desenvolvedor: o cliente, o servidor e o banco SQLite. Uma entrega o deixa rodando com as migrações dela aplicadas na partida; o comando que o sobe é `npm run dev` (docs/01 §Ambientes).
 * **Prova de uma tela:** capturas de tela com o Playwright em 390 e 1280 pixels de largura, salvas em `work/done/<slug>-*.png`. Não há arquivo de design: a referência é o estilo do esqueleto, registrado no docs/04 §Estilo visual, e as capturas `work/done/esqueleto-390.png` e `-1280.png`. As capturas são tiradas uma vez, fora do `verify`: `npx playwright screenshot --viewport-size=390,844 http://localhost:5173 work/done/<slug>-390.png` (e `1280,800`), com o `npm run dev` rodando. A captura de uma tela que não é a inicial usa o caminho dela: `http://localhost:5173/membros`.
 * **Publicação:** nenhuma. Não há ambiente além do local.
+* **Contexto:** `context/` vai para o commit. O repositório é público e serve de laboratório, e quem o lê, pessoa ou agente, precisa ver de onde cada decisão veio. Tudo o que está ali é material de exemplo, fictício, sem dado pessoal nem cláusula de confidencialidade; num projeto com mensagens reais de um cliente, a pasta iria para o `.gitignore`.
 * **Git:** um worktree por entrega. O /propose cria o worktree `../biblioteca-<slug>` no branch `<slug>`, a partir do `main`, e escreve a página lá; o /apply constrói lá. A pessoa faz o commit no branch e, na pasta principal, o `git merge --no-ff <slug>` no `main` (ou um pull request com commit de merge no GitHub), depois `git worktree remove ../biblioteca-<slug>` e `git branch -d <slug>`. A página e a construção de uma entrega são uma mudança: um merge, desfeito com `git revert -m 1 <merge>`. O agente coloca em stage; ele nunca faz commit nem merge.
 
 ### Dados de exemplo
