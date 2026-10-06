@@ -79,6 +79,26 @@ export function textoDaDevolucao(devolverEm: string): string {
 	return `Devolver até ${dia}/${mes}/${ano}`;
 }
 
+/** Um empréstimo aberto com a devolução antes de `hoje`, como a lista de atrasos o mostra (docs/03). */
+export type EmprestimoAtrasado = EmprestimoAberto & { diasDeAtraso: number };
+
+const UM_DIA = 24 * 60 * 60 * 1000;
+
+/**
+ * Os dias de calendário de `devolverEm` até `hoje`, em UTC como em
+ * `somarDias`, sem ler o relógio: `somarDias(devolverEm, n) === hoje`. Não
+ * recusa nada: quem chama só passa empréstimos atrasados, e o resultado é 1
+ * ou mais.
+ */
+export function diasDeAtraso(devolverEm: string, hoje: string): number {
+	return Math.round((Date.parse(hoje) - Date.parse(devolverEm)) / UM_DIA);
+}
+
+/** 1 vira "Atrasado há 1 dia"; N, "Atrasado há N dias". */
+export function textoDoAtraso(dias: number): string {
+	return `Atrasado há ${dias} ${dias === 1 ? "dia" : "dias"}`;
+}
+
 /** Os textos do docs/03, literais. */
 export const mensagens: Record<
 	RecusaDeEmprestimo | "NaoEncontrado" | "Falhou",

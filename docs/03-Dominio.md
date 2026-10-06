@@ -30,6 +30,13 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | orquestrador da devolução | `devolucaoPedida(evento, hoje, repositorios)` | Transforma uma `DevolucaoPedida` em um `EstadoDaDevolucao`. |
 | estado da devolução | `EstadoDaDevolucao`, campo `tipo`: `Devolvido` \| `Recusado` \| `Falhou` | O que o orquestrador da devolução publica depois de um pedido. |
 | repositórios da devolução | `RepositoriosDeDevolucao`: `buscarEmprestimo`, `registrarDevolucao` | As funções de busca e gravação que o orquestrador da devolução recebe; moram no repositório do empréstimo. |
+| lista de atrasos | a subfatia `emprestimos/atrasos/`; a tela `/atrasos`, "Atrasos" na navegação | Os empréstimos abertos atrasados, do mais atrasado para o menos, para a bibliotecária ver quem está devendo. Só leitura: a devolução continua na tela de empréstimo. |
+| empréstimo atrasado | `EmprestimoAtrasado`, `{ exemplarId, titulo, membroId, nome, devolverEm, diasDeAtraso }` | Um empréstimo aberto com `devolverEm` anterior a `hoje`, como em `emAtraso`, como a lista de atrasos o mostra: o `EmprestimoAberto` mais os dias de atraso. Um empréstimo que vence hoje não está atrasado. |
+| dias de atraso | `diasDeAtraso(devolverEm, hoje)` | O caso de uso que conta quantos dias se passaram da data de devolução até `hoje`, sem ler o relógio: `devolverEm` ontem é 1. |
+| texto do atraso | `textoDoAtraso(dias)` | O caso de uso que escreve os dias de atraso para a bibliotecária: "Atrasado há 1 dia", "Atrasado há 19 dias". |
+| orquestrador da lista de atrasos | `listaDeAtrasosPedida(hoje, repositorios)` | Busca os empréstimos atrasados de `hoje`, conta os dias de atraso de cada um e publica um `EstadoDosAtrasos`. |
+| estado da lista de atrasos | `EstadoDosAtrasos`, campo `tipo`: `Listado` \| `Falhou` | O que o orquestrador da lista de atrasos publica. |
+| repositórios dos atrasos | `RepositoriosDeAtrasos`: `listarEmprestimosAtrasados` | A função de leitura que o orquestrador da lista de atrasos recebe; mora no repositório do empréstimo. |
 | emprestar | `emprestar` | O caso de uso que decide um empréstimo: devolve um `Emprestimo` ou uma `RecusaDeEmprestimo`. |
 | pode pegar emprestado | `podePegarEmprestado` | A regra que diz se um membro pode pegar emprestado; o cliente a usa para decidir o que mostrar. |
 | recusa de empréstimo | `RecusaDeEmprestimo = "TemLivrosEmAtraso" \| "JaEmprestado" \| "MembroSuspenso"` | Uma regra dizendo não. Nada falhou. |

@@ -440,3 +440,70 @@ describe("rota da devolução, sem o relógio de teste", () => {
 		erros.mockRestore();
 	});
 });
+
+function atrasados(app: App, xHoje?: string) {
+	return app.request("/api/emprestimos/atrasados", {
+		headers: xHoje ? { "x-hoje": xHoje } : {},
+	});
+}
+
+describe("rota dos atrasos, com o relógio de teste", () => {
+	test("GET /api/emprestimos/atrasados responde 200 com os atrasados de x-hoje e os dias de atraso", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId }, "2026-10-01");
+		const resposta = await atrasados(app, "2026-10-23");
+		expect(resposta.status).toBe(200);
+		expect(await resposta.json()).toEqual([
+			{
+				exemplarId,
+				titulo: "Dom Casmurro",
+				membroId,
+				nome: "Capitu",
+				devolverEm: "2026-10-22",
+				diasDeAtraso: 1,
+			},
+		]);
+	});
+
+	test("GET /api/emprestimos/atrasados responde 200 com [] no dia da devolução", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId }, "2026-10-01");
+		const resposta = await atrasados(app, "2026-10-22");
+		expect(resposta.status).toBe(200);
+		expect(await resposta.json()).toEqual([]);
+	});
+
+	test("GET /api/emprestimos/atrasados responde 400 HojeInvalido a uma data que não existe", async () => {
+		const { app } = servidor({ relogioDeTeste: true });
+		const resposta = await atrasados(app, "2026-02-30");
+		expect(resposta.status).toBe(400);
+		expect(await resposta.json()).toEqual({ falha: "HojeInvalido" });
+	});
+});
+
+describe("rota dos atrasos, sem o relógio de teste", () => {
+	test("GET /api/emprestimos/atrasados ignora x-hoje e lê a data local", async () => {
+		const { app } = servidor();
+		const exemplarId = await exemplarNovo(app, "Dom Casmurro");
+		const membroId = await membroNovo(app, "Capitu");
+		await emprestar(app, { exemplarId, membroId });
+		const resposta = await atrasados(app, "2099-01-01");
+		expect(resposta.status).toBe(200);
+		expect(await resposta.json()).toEqual([]);
+	});
+
+	test("com o banco fechado, GET /api/emprestimos/atrasados responde 500 e escreve a mensagem no terminal", async () => {
+		const { db, app } = servidor();
+		const erros = vi.spyOn(console, "error").mockImplementation(() => {});
+		db.close();
+		const resposta = await atrasados(app);
+		expect(resposta.status).toBe(500);
+		expect(await resposta.json()).toEqual({ falha: "BancoDeDadosFalhou" });
+		expect(erros).toHaveBeenCalledWith(expect.stringMatching(/not open/));
+		erros.mockRestore();
+	});
+});

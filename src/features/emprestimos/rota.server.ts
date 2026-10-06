@@ -3,12 +3,14 @@ import { type Context, Hono } from "hono";
 import { dataLocal } from "../../lib/dataLocal.ts";
 import { falhou } from "../../lib/falhou.server.ts";
 import { err, ok, type Result } from "../../lib/result.ts";
+import { listaDeAtrasosPedida } from "./atrasos/eventosDeAtrasos.ts";
 import { devolucaoPedida } from "./devolucao/eventosDeDevolucao.ts";
 import { emprestimoPedido } from "./eventosDeEmprestimo.ts";
 import {
 	listarEmprestimosAbertos,
 	listarExemplaresDisponiveis,
 	listarMembrosDoEmprestimo,
+	repositoriosDeAtrasos,
 	repositoriosDeDevolucao,
 	repositoriosDeEmprestimo,
 } from "./repositorio.server.ts";
@@ -123,6 +125,18 @@ export function rotaDeEmprestimos(
 			const status = estado.recusa === "NaoEncontrado" ? 404 : 409;
 			return c.json({ recusa: estado.recusa }, status);
 		}
+		return falhou(c, estado.excecao);
+	});
+
+	// Os repositórios dos atrasos recebem o `hoje` do orquestrador a cada
+	// chamada, então são montados uma vez, fechando só sobre o `db`.
+	const repositoriosDosAtrasos = repositoriosDeAtrasos(db);
+
+	rota.get("/atrasados", (c) => {
+		const hoje = lerHoje(c.req.header("x-hoje"), relogioDeTeste);
+		if (!hoje.ok) return c.json({ falha: hoje.error }, 400);
+		const estado = listaDeAtrasosPedida(hoje.value, repositoriosDosAtrasos);
+		if (estado.tipo === "Listado") return c.json(estado.atrasados, 200);
 		return falhou(c, estado.excecao);
 	});
 

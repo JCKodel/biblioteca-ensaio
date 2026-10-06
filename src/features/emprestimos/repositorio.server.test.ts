@@ -17,6 +17,7 @@ import {
 	buscarMembro,
 	inserirEmprestimo,
 	listarEmprestimosAbertos,
+	listarEmprestimosAtrasados,
 	listarExemplaresDisponiveis,
 	listarMembrosDoEmprestimo,
 	registrarDevolucao,
@@ -299,6 +300,7 @@ describe("repositório do empréstimo", () => {
 		expect(buscarExemplar(db, "1")).toEqual(falha);
 		expect(inserirEmprestimo(db, emprestimo("1", "1"))).toEqual(falha);
 		expect(listarEmprestimosAbertos(db)).toEqual(falha);
+		expect(listarEmprestimosAtrasados(db, "2026-10-23")).toEqual(falha);
 		expect(listarExemplaresDisponiveis(db)).toEqual(falha);
 		expect(listarMembrosDoEmprestimo(db, "2026-10-01")).toEqual(falha);
 		expect(buscarEmprestimo(db, "1", "1")).toEqual(falha);
@@ -464,5 +466,102 @@ describe("repositório da devolução", () => {
 			),
 		);
 		expect(valor(buscarMembro(db, capitu.id, "2026-10-30")).emAtraso).toBe(0);
+	});
+});
+
+describe("repositório dos atrasos", () => {
+	function atrasados(db: DatabaseSync, hoje: string) {
+		return valor(listarEmprestimosAtrasados(db, hoje)).map(
+			(atrasado) => atrasado.exemplarId,
+		);
+	}
+
+	test("listarEmprestimosAtrasados traz o aberto com a devolução antes de hoje, com título, nome e ids como string", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		expect(listarEmprestimosAtrasados(db, "2026-10-23")).toEqual({
+			ok: true,
+			value: [
+				{
+					exemplarId: exemplar.id,
+					titulo: "Dom Casmurro",
+					membroId: capitu.id,
+					nome: "Capitu",
+					devolverEm: "2026-10-22",
+				},
+			],
+		});
+	});
+
+	test("listarEmprestimosAtrasados não traz o empréstimo que vence hoje", () => {
+		const db = bancoNovo();
+		const exemplar = livroComExemplar(db, "Dom Casmurro");
+		const capitu = membro(db, "Capitu");
+		valor(inserirEmprestimo(db, emprestimo(exemplar.id, capitu.id)));
+		expect(atrasados(db, "2026-10-22")).toEqual([]);
+		expect(atrasados(db, "2026-10-01")).toEqual([]);
+	});
+
+	test("listarEmprestimosAtrasados não traz os devolvidos, no prazo ou com atraso", () => {
+		const db = bancoNovo();
+		const noPrazo = livroComExemplar(db, "Dom Casmurro");
+		const comAtraso = livroComExemplar(db, "Quincas Borba");
+		const capitu = membro(db, "Capitu");
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(noPrazo.id, capitu.id, { devolvidoEm: "2026-10-10" }),
+			),
+		);
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(comAtraso.id, capitu.id, { devolvidoEm: "2026-10-30" }),
+			),
+		);
+		expect(atrasados(db, "2026-10-31")).toEqual([]);
+	});
+
+	test("listarEmprestimosAtrasados ordena pela devolução mais antiga e, na mesma data, pelo registrado antes", () => {
+		const db = bancoNovo();
+		const primeiro = livroComExemplar(db, "Dom Casmurro");
+		const segundo = livroComExemplar(db, "O Cortiço");
+		const maisAntigo = livroComExemplar(db, "Os Sertões");
+		const maisNovo = livroComExemplar(db, "Vidas Secas");
+		const carla = membro(db, "Carla");
+		const sofia = membro(db, "Sofia");
+		const lucas = membro(db, "Lucas");
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(maisNovo.id, lucas.id, { devolverEm: "2026-09-23" }),
+			),
+		);
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(primeiro.id, carla.id, { devolverEm: "2026-09-13" }),
+			),
+		);
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(segundo.id, carla.id, { devolverEm: "2026-09-13" }),
+			),
+		);
+		valor(
+			inserirEmprestimo(
+				db,
+				emprestimo(maisAntigo.id, sofia.id, { devolverEm: "2026-08-24" }),
+			),
+		);
+		expect(atrasados(db, "2026-10-02")).toEqual([
+			maisAntigo.id,
+			primeiro.id,
+			segundo.id,
+			maisNovo.id,
+		]);
 	});
 });

@@ -1,21 +1,24 @@
 import { TelaDeCatalogo } from "./features/catalogo/TelaDeCatalogo.tsx";
+import { TelaDeAtrasos } from "./features/emprestimos/atrasos/TelaDeAtrasos.tsx";
 import { TelaDeEmprestimo } from "./features/emprestimos/TelaDeEmprestimo.tsx";
 import { TelaDeMembros } from "./features/membros/TelaDeMembros.tsx";
 
 // A tela é escolhida pelo caminho na carga da página: /membros mostra os
-// membros, /emprestimos os empréstimos, qualquer outro caminho o catálogo. Os
-// links são <a href> comuns, que recarregam a página; sem biblioteca de rotas
-// nem `history`.
+// membros, /emprestimos os empréstimos, /atrasos os empréstimos atrasados,
+// qualquer outro caminho o catálogo. Os links são <a href> comuns, que
+// recarregam a página; sem biblioteca de rotas nem `history`.
 const TELAS = [
 	{ caminho: "/", nome: "Catálogo" },
 	{ caminho: "/membros", nome: "Membros" },
 	{ caminho: "/emprestimos", nome: "Empréstimos" },
+	{ caminho: "/atrasos", nome: "Atrasos" },
 ] as const;
 
 const TELA_DE = {
 	"/": TelaDeCatalogo,
 	"/membros": TelaDeMembros,
 	"/emprestimos": TelaDeEmprestimo,
+	"/atrasos": TelaDeAtrasos,
 };
 
 export function Aplicacao() {

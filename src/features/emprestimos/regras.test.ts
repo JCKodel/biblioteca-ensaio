@@ -2,11 +2,13 @@ import { describe, expect, test } from "vitest";
 import {
 	dataDeDevolucao,
 	devolver,
+	diasDeAtraso,
 	emprestar,
 	mensagens,
 	mensagensDaDevolucao,
 	podePegarEmprestado,
 	textoDaDevolucao,
+	textoDoAtraso,
 } from "./regras.ts";
 
 describe("emprestar", () => {
@@ -149,5 +151,34 @@ describe("mensagensDaDevolucao", () => {
 			NaoEncontrado: "Este exemplar não está emprestado a este membro.",
 			Falhou: "Não foi possível acessar o banco da biblioteca. Tente de novo.",
 		});
+	});
+});
+
+describe("diasDeAtraso", () => {
+	test("diasDeAtraso de uma devolução para ontem é 1", () => {
+		expect(diasDeAtraso("2026-10-22", "2026-10-23")).toBe(1);
+	});
+
+	test("diasDeAtraso conta 19 dias de 13/09 a 02/10", () => {
+		expect(diasDeAtraso("2026-09-13", "2026-10-02")).toBe(19);
+	});
+
+	test("diasDeAtraso conta dias de calendário atravessando o fim do mês", () => {
+		expect(diasDeAtraso("2026-09-30", "2026-10-02")).toBe(2);
+	});
+
+	test("diasDeAtraso conta dias de calendário atravessando o fim do ano", () => {
+		expect(diasDeAtraso("2026-12-31", "2027-01-02")).toBe(2);
+	});
+});
+
+describe("textoDoAtraso", () => {
+	test("textoDoAtraso escreve um dia no singular", () => {
+		expect(textoDoAtraso(1)).toBe("Atrasado há 1 dia");
+	});
+
+	test("textoDoAtraso escreve dois ou mais dias no plural", () => {
+		expect(textoDoAtraso(2)).toBe("Atrasado há 2 dias");
+		expect(textoDoAtraso(19)).toBe("Atrasado há 19 dias");
 	});
 });
