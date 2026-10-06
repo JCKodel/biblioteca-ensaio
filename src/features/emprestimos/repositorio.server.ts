@@ -6,6 +6,7 @@ import {
 import { err, ok, type Result } from "../../lib/result.ts";
 import type { Exemplar } from "../catalogo/regras.ts";
 import type { Membro } from "../membros/regras.ts";
+import type { RepositoriosDeAtrasos } from "./atrasos/eventosDeAtrasos.ts";
 import type { RepositoriosDeDevolucao } from "./devolucao/eventosDeDevolucao.ts";
 import type { RepositoriosDeEmprestimo } from "./eventosDeEmprestimo.ts";
 import type {
@@ -111,35 +112,69 @@ export function inserirEmprestimo(
 	return salvo;
 }
 
+// O SELECT e os JOIN de um `EmprestimoAberto`, e a conversão da linha.
+// Primeira ocorrência: `listarEmprestimosAbertos`; segunda:
+// `listarEmprestimosAtrasados`, que os trouxe para cá.
+const SELECT_DE_EMPRESTIMO_ABERTO = `SELECT emprestimo.exemplar_id, livro.titulo,
+		emprestimo.membro_id, membro.nome, emprestimo.devolver_em
+	FROM emprestimo
+	JOIN exemplar ON exemplar.id = emprestimo.exemplar_id
+	JOIN livro ON livro.id = exemplar.livro_id
+	JOIN membro ON membro.id = emprestimo.membro_id`;
+
+type LinhaDeEmprestimoAberto = {
+	exemplar_id: number;
+	titulo: string;
+	membro_id: number;
+	nome: string;
+	devolver_em: string;
+};
+
+function paraEmprestimoAberto(
+	linha: LinhaDeEmprestimoAberto,
+): EmprestimoAberto {
+	return {
+		exemplarId: String(linha.exemplar_id),
+		titulo: linha.titulo,
+		membroId: String(linha.membro_id),
+		nome: linha.nome,
+		devolverEm: linha.devolver_em,
+	};
+}
+
 export function listarEmprestimosAbertos(
 	db: DatabaseSync,
 ): Result<EmprestimoAberto[], BancoDeDadosFalhou> {
 	return consultar(() => {
 		const linhas = db
 			.prepare(
-				`SELECT emprestimo.exemplar_id, livro.titulo, emprestimo.membro_id,
-					membro.nome, emprestimo.devolver_em
-				FROM emprestimo
-				JOIN exemplar ON exemplar.id = emprestimo.exemplar_id
-				JOIN livro ON livro.id = exemplar.livro_id
-				JOIN membro ON membro.id = emprestimo.membro_id
+				`${SELECT_DE_EMPRESTIMO_ABERTO}
 				WHERE emprestimo.devolvido_em IS NULL
 				ORDER BY emprestimo.id DESC`,
 			)
-			.all() as {
-			exemplar_id: number;
-			titulo: string;
-			membro_id: number;
-			nome: string;
-			devolver_em: string;
-		}[];
-		return linhas.map((linha) => ({
-			exemplarId: String(linha.exemplar_id),
-			titulo: linha.titulo,
-			membroId: String(linha.membro_id),
-			nome: linha.nome,
-			devolverEm: linha.devolver_em,
-		}));
+			.all() as LinhaDeEmprestimoAberto[];
+		return linhas.map(paraEmprestimoAberto);
+	});
+}
+
+/**
+ * Os abertos com a devolução antes de `hoje`, como em `EM_ATRASO`: o que
+ * vence hoje não está atrasado. Da devolução mais antiga para a mais nova e,
+ * na mesma data, pelo registrado antes.
+ */
+export function listarEmprestimosAtrasados(
+	db: DatabaseSync,
+	hoje: string,
+): Result<EmprestimoAberto[], BancoDeDadosFalhou> {
+	return consultar(() => {
+		const linhas = db
+			.prepare(
+				`${SELECT_DE_EMPRESTIMO_ABERTO}
+				WHERE emprestimo.devolvido_em IS NULL AND emprestimo.devolver_em < ?
+				ORDER BY emprestimo.devolver_em ASC, emprestimo.id ASC`,
+			)
+			.all(hoje) as LinhaDeEmprestimoAberto[];
+		return linhas.map(paraEmprestimoAberto);
 	});
 }
 
@@ -276,5 +311,15 @@ export function repositoriosDeDevolucao(
 		buscarEmprestimo: (exemplarId, membroId) =>
 			buscarEmprestimo(db, exemplarId, membroId),
 		registrarDevolucao: (emprestimo) => registrarDevolucao(db, emprestimo),
+	};
+}
+
+/**
+ * Os repositórios da lista de atrasos, fechados só sobre o `db`: o `hoje` vem
+ * do orquestrador a cada chamada, então a rota os monta uma vez.
+ */
+export function repositoriosDeAtrasos(db: DatabaseSync): RepositoriosDeAtrasos {
+	return {
+		listarEmprestimosAtrasados: (hoje) => listarEmprestimosAtrasados(db, hoje),
 	};
 }
