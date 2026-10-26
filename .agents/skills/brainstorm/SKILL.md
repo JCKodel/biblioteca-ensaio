@@ -1,11 +1,12 @@
 ---
 name: brainstorm
+disable-model-invocation: true
 description: >-
   Start a new project by conversation, from what it is to how it is
   delivered. Ends by writing docs/00 to 06, docs/adr/ and AGENTS.md.
   Writes no code.
 metadata:
-  version: "2026.10.05"
+  version: "2026.10.27"
 ---
 You are the thinking partner of someone starting a product. The outcome is
 the set of documents `references/documents.md` describes, which every later
@@ -27,14 +28,24 @@ order. Move on when you could write the section yourself.
    git, in their own words, with your recommendation for this stack, and
    record the answers.
 4. **The conventions** (docs/04): documentation language, identifier
-   language, style, where tests live, commit format.
-5. **The process slots** (docs/05): verify command, environments, how a
-   screen is proven, publish policy, whether `context/` is committed. What
-   does not exist yet is written as
-   "created by the first delivery".
+   language, style, where tests live; commit format lives in docs/05 §6.
+5. **The process slots** (docs/05): verify command and the slow tests kept
+   out of it, environments, publish policy, whether `context/` is
+   committed, and the manuals: running it is owed by the first delivery
+   after which a person can, the rest "none yet". How a screen is proven
+   and where its reference comes from: the person's design tool, a
+   design delivery before the first screen, or a prototype by choice;
+   the default is a design delivery for a product, prototype for a tool.
+   Then whether a second pair of eyes reads each delivery before it ends
+   and the whole milestone at its close. The default is yes: the host's
+   own review where it has one, else a read-only agent, and the kit's
+   readers over docs/01's modules, on the session's model. What does not
+   exist yet is written as "created by the first delivery".
 6. **The first milestone** (docs/06): three to eight deliveries, one line
-   each, in order, then its review. The first ones are the skeleton the
-   others stand on.
+   each, in order, `· after` on a line that needs another first, then
+   its review, `· after all`. The first ones are the skeleton the others
+   stand on. When sessions will run at the same time, docs/05 §4 gets
+   its parallel paragraphs.
 
 Ask only what you cannot decide with a sensible default. State the default
 and ask whether it holds: a person who cannot answer must be able to say
@@ -44,15 +55,16 @@ it has one, recommendation first, at most four questions per round.
 
 ## Write
 
-When the six subjects are covered, write, in the documentation language:
-docs/00 to 06 as `references/documents.md` describes them; docs/adr/, one
-dated ADR per decision taken here that a future session might undo (stack,
-FOCUS or not, git, anything the person hesitated on); `AGENTS.md` from the
-template; `CLAUDE.md` holding the line `@AGENTS.md` and nothing else yet;
-and the folder `work/done/` with a `.gitkeep`, so it survives a clone. The numbers of the
-documents are fixed; the names after them are in the documentation
-language.
+When the six subjects are covered, write, in the documentation language,
+docs/00 to 06 as `references/documents.md` describes them. Write
+docs/adr/: one dated ADR per decision taken here that a future session
+might undo, such as the stack, FOCUS or not, git, anything the person
+hesitated on. Write `AGENTS.md` from the template, `CLAUDE.md` holding
+the line `@AGENTS.md` and nothing else yet, and the folder `work/done/`
+with a `.gitkeep`, so it survives a clone. The numbers of the documents
+are fixed; the names after them are in the documentation language.
 
 Show the queue and stop. The next step is `/propose <slug>` for its first
-line, in a fresh session. Write no code, no configuration and no dependency
+line; write it as this host invokes commands, which may not be `/`. Write
+no code, no configuration and no dependency
 file: the first delivery does that, with a page of its own.

@@ -1,11 +1,12 @@
 ---
 name: analyze
+disable-model-invocation: true
 description: >-
   Document an existing repository. Reads the code, writes docs/00 to 06,
   docs/adr/ and AGENTS.md describing what is there, and asks only what the
   code cannot answer. Writes no code.
 metadata:
-  version: "2026.10.05"
+  version: "2026.10.27"
 ---
 You are documenting a repository so that every later session can act on it
 without rereading it. Read `references/documents.md` first, whole: it says
@@ -14,15 +15,17 @@ what each document holds.
 ## Read
 
 `context/`, whole, when it exists: what people said that the code cannot.
-The README and any existing docs; the manifests (package.json, pyproject,
-go.mod, *.csproj, pubspec.yaml, Cargo.toml, Gemfile, and the like); the
-folder tree two levels deep; the entry points; the tests and how they run;
-CI; the last fifty commit subjects; any agent rules file already there
-(CLAUDE.md, AGENTS.md, .github/copilot-instructions.md, .cursorrules).
+The README and any existing docs. The manifests: package.json, pyproject,
+go.mod, *.csproj, pubspec.yaml, Cargo.toml, Gemfile, and the like. The
+folder tree two levels deep, the entry points, the tests and how they
+run. CI, and any Makefile or script a person runs by hand. The last fifty
+commit subjects. Any agent rules file already there: CLAUDE.md,
+AGENTS.md, .github/copilot-instructions.md, .cursorrules.
 
 From that, infer the stack, how the code is organized, where business rules
-live, how errors travel, what the verify command is, and which environments
-exist. What the code says, you do not ask.
+live, how errors travel, what the verify command is, which tests are slow
+enough to leave out of it, and which environments exist. What the code
+says, you do not ask.
 
 ## Ask
 
@@ -37,8 +40,19 @@ host's question form when it has one:
   and you say what that is;
 * whether `context/` is committed. Default: committed when the repository
   stays with the team, in `.gitignore` when it is delivered or public;
+* the reviews: whether a second pair of eyes reads each delivery before
+  it ends and the whole milestone at its close (docs/05 §5). Default:
+  yes; the host's own review when it can be limited to a delivery's
+  paths, else a read-only agent; and the kit's readers over docs/01's
+  modules on the session's model, or the host's deep review when the
+  project already launches one;
+* where a screen's reference comes from, when there are screens: the
+  design files the repository or `context/` holds, a design delivery
+  before the next screen, or a prototype by choice. Default: what
+  exists, named;
 * the first milestone: three to eight deliveries, or where to read them
-  from (issues, a TODO file, a roadmap), then its review.
+  from (issues, a TODO file, a roadmap), `· after` where one needs
+  another first, then its review, `· after all`.
 
 Everything else you decide from the code and mark as observed. Where the
 code contradicts itself, the document records an open question; the person
@@ -46,17 +60,21 @@ is not asked to settle it now.
 
 ## Write
 
-In the documentation language: docs/00 to 06 describing what exists, not
-what should exist; docs/adr/ with the decisions the code already embodies
-and the ones this round took, one dated paragraph each; `AGENTS.md` from the
-template; `CLAUDE.md` holding the line `@AGENTS.md`; and the folder
-`work/done/`. The rules live in `AGENTS.md`: what an existing `CLAUDE.md`,
-`.github/copilot-instructions.md` or similar file already says moves into
-it, and that file becomes the import line (or, when its host cannot
-import, a one-line pointer to `AGENTS.md`), keeping below it only what
-applies to that host alone. Show the diff before writing.
+In the documentation language, write docs/00 to 06 describing what
+exists, not what should exist. Write docs/adr/ with the decisions the
+code already embodies and the ones this round took, one dated paragraph
+each. Write docs/manuals/, running it first, then one per thing a person
+already does by hand, such as a Makefile target, a deploy script or
+steps in a README, as docs/05 §5 says. Write `AGENTS.md` from the
+template, `CLAUDE.md` holding `@AGENTS.md`, and the folder `work/done/`
+with a `.gitkeep`. The rules live in `AGENTS.md`: what an
+existing `CLAUDE.md`, `.github/copilot-instructions.md` or similar file
+already says moves into it, and that file becomes the import line (or,
+when its host cannot import, a one-line pointer to `AGENTS.md`), keeping
+below it only what applies to that host alone. Show the diff before writing.
 The numbers of the documents are fixed; the names after them are in the
 documentation language.
 
 Show the queue and stop. The next step is `/propose <slug>` for its first
-line, in a fresh session. Change no code.
+line; write it as this host invokes commands, which may not be `/`. Change
+no code.
