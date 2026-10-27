@@ -55,6 +55,7 @@ Um teste para cada peça (capítulo 8 do livro). Um teste troca só o I/O e o re
 | Orquestrador | com fakes: `falsos` preenche os repositórios que o teste define, e os outros são `naoEsperado`, que lança se chamado; nunca mocks | `eventosDe<X>.test.ts`, ao lado |
 | Tela | poucos testes Playwright, um por cenário que o usuário vê | `e2e/`, na raiz |
 
+* As regras de negócio são testadas no processo, nos testes mais rápidos que há (caso de uso, repositório, orquestrador); um ponta a ponta, que precisa da aplicação rodando, só entra onde prova o que os rápidos não conseguem: o que o usuário vê na tela.
 * Vitest roda os testes unitários no Node; Playwright roda os ponta a ponta num navegador real.
 * O nome de um teste é uma frase em português da regra: `emprestar recusa um membro com um livro atrasado`.
 * O teste é visto vermelho antes do código que o faz passar.
@@ -62,13 +63,4 @@ Um teste para cada peça (capítulo 8 do livro). Um teste troca só o I/O e o re
 
 ## Commit
 
-O formato está no docs/05 §6. O assunto diz o que a entrega faz, no presente, como no capítulo 19 do livro, até 72 caracteres, com o slug entre parênteses no fim:
-
-```
-Empresta um exemplar, e recusa pelas regras (emprestar-livro)
-
-- <um destaque, uma linha>
-- <até cinco>
-
-work/done/emprestar-livro.md
-```
+O formato da mensagem de commit está no docs/05 §6, e só lá.

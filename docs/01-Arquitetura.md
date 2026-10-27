@@ -49,7 +49,7 @@ src/features/membros/     o que a biblioteca guarda sobre um membro
 src/features/catalogo/    livros e exemplares
 src/lib/                  o que não pertence a nenhuma feature, no segundo uso
 src/dadosDeExemplo/       plano.ts, carregar.server.ts, repositorio.server.ts e os
-                          seus testes: os dados de exemplo (docs/05 §5), sem tela nem rota
+                          seus testes: os dados de exemplo (docs/manuals/dados-de-exemplo.md), sem tela nem rota
 scripts/                  dadosDeExemplo.ts, a entrada do comando; verificar.ts, o verify
 ```
 
@@ -87,6 +87,8 @@ Um arquivo `.server.ts` roda só no servidor; o código do cliente nunca importa
 
 Um arquivo aparece numa fatia quando se paga: uma feature sem regra não tem `regras.ts`, uma que não guarda nada não tem repositório. Código sobre uma feature fica na fatia dela e é importado de lá; o que não pertence a nenhuma vai para `src/lib/` no segundo uso, e o arquivo diz onde estão o primeiro e o segundo.
 
+**Abstração na segunda ocorrência concreta.** Uma abstração (uma função, um tipo ou uma constante compartilhados, um arquivo em `src/lib/`) nasce na segunda ocorrência concreta, nunca na primeira, e a entrega que a cria diz qual foi a primeira, como a tabela de `src/lib/` acima registra.
+
 **Dependências só onde há um fake.** O orquestrador recebe os seus repositórios (o teste passa fakes); o repositório recebe o `db` (o teste passa um SQLite em memória com as migrações reais); caso de uso e tela não recebem nenhuma. O relógio é um valor: `hoje`, string `YYYY-MM-DD`, lida uma vez onde a requisição chega.
 
 O capítulo 6 do livro mostra o mesmo orquestrador assíncrono e com repositórios padrão; este projeto segue a versão do capítulo 7, síncrona e com repositórios obrigatórios, porque o `node:sqlite` é síncrono e o teste sempre passa os repositórios.
@@ -111,7 +113,7 @@ Exceções como valores (capítulo 5 do livro):
 
 ## Ambientes
 
-* **Local**, a máquina do desenvolvedor (Windows, macOS ou Linux): o cliente, o servidor e o banco SQLite em arquivo. É o único ambiente. `npm run dev` o sobe num terminal só: o Vite em `http://localhost:5173`, que repassa `/api` ao servidor, e o servidor Hono em `http://localhost:3000` (`node --watch src/iniciar.server.ts`), os dois pelo `concurrently`; fechar o comando encerra os dois. Na partida, o servidor cria `data/biblioteca.sqlite` (ignorado pelo git) e aplica as migrações pendentes (docs/02 §Esquema). `npm run dados-de-exemplo` (docs/05 §5) grava nesse mesmo arquivo, sempre ele, com o `npm run dev` aberto ou não: ignora `BANCO` e `PORTA_DO_SERVIDOR`, cria o arquivo e aplica as migrações se faltarem, e a tela mostra os dados depois de recarregar a página.
+* **Local**, a máquina do desenvolvedor (Windows, macOS ou Linux): o cliente, o servidor e o banco SQLite em arquivo. É o único ambiente. `npm run dev` o sobe num terminal só: o Vite em `http://localhost:5173`, que repassa `/api` ao servidor, e o servidor Hono em `http://localhost:3000` (`node --watch src/iniciar.server.ts`), os dois pelo `concurrently`; fechar o comando encerra os dois. Na partida, o servidor cria `data/biblioteca.sqlite` (ignorado pelo git) e aplica as migrações pendentes (docs/02 §Esquema). `npm run dados-de-exemplo` (docs/manuals/dados-de-exemplo.md) grava nesse mesmo arquivo, sempre ele, com o `npm run dev` aberto ou não: ignora `BANCO` e `PORTA_DO_SERVIDOR`, cria o arquivo e aplica as migrações se faltarem, e a tela mostra os dados depois de recarregar a página.
 * **O e2e**, dentro do mesmo ambiente local: `npm run e2e` sobe, pelo `webServer` do `playwright.config.ts`, um servidor e um cliente próprios, o servidor em `http://localhost:3100` com um banco em memória (`:memory:`) e o Vite em `http://localhost:5174`, com `reuseExistingServer: false`. Ele roda com o `npm run dev` aberto sem gravar no banco dele, e começa vazio a cada rodada.
 
 Três variáveis de ambiente opcionais, lidas por `src/iniciar.server.ts`, separam os dois: `BANCO`, o arquivo do banco relativo à raiz do repositório, ou `:memory:` (padrão `data/biblioteca.sqlite`); `PORTA_DO_SERVIDOR` (padrão `3000`), que o `vite.config.ts` também lê para repassar `/api`; e `RELOGIO_DE_TESTE`, que com o valor `cabecalho` liga o relógio de teste: o cabeçalho `x-hoje: AAAA-MM-DD` de cada requisição dá o `hoje` dela (docs/03). Ausente ou com outro valor, o cabeçalho é ignorado. Só o `webServer` do Playwright as passa, pelo `env`, igual em todo sistema; `RELOGIO_DE_TESTE` só no do servidor. Nenhum script do `package.json` as usa (ADR-0005), então o `npm run dev` nunca tem o relógio de teste. O proxy do Vite repassa os cabeçalhos do pedido sem filtrar, `x-hoje` incluído; o e2e que recusa um membro atrasado é a prova.
