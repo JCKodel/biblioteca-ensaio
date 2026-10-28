@@ -51,6 +51,25 @@ export function textoDeExemplares(total: number): string {
 	return `${total} exemplares`;
 }
 
+/** Sem acentos nem maiúsculas: "Eça" e "eca" ficam iguais. */
+function normalizado(texto: string): string {
+	return texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+/** Os livros, na mesma ordem, cujo título ou autor contém a busca aparada. */
+export function buscarNoCatalogo(
+	livros: LivroDoCatalogo[],
+	busca: string,
+): LivroDoCatalogo[] {
+	const trecho = normalizado(busca.trim());
+	if (trecho === "") return livros;
+	return livros.filter(
+		(livro) =>
+			normalizado(livro.titulo).includes(trecho) ||
+			normalizado(livro.autor).includes(trecho),
+	);
+}
+
 /** Os textos do docs/03, literais. */
 export const mensagens: Record<
 	RecusaDeLivro | "NaoEncontrado" | "Falhou",

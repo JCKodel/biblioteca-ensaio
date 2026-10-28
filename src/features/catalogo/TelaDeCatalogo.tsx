@@ -6,10 +6,13 @@ export function TelaDeCatalogo() {
 	const {
 		pedido,
 		lista,
+		busca,
+		livrosEncontrados,
 		aviso,
 		cadastrandoLivro,
 		livroRecebendoExemplar,
 		alterarCampo,
+		alterarBusca,
 		cadastrarLivro,
 		adicionarExemplar,
 	} = useCatalogo();
@@ -64,8 +67,22 @@ export function TelaDeCatalogo() {
 				<p>Nenhum livro no catálogo ainda.</p>
 			)}
 			{lista.tipo === "Carregada" && lista.livros.length > 0 && (
+				<label className="campo catalogo__busca">
+					<span className="campo__rotulo">Buscar por título ou autor</span>
+					<input
+						className="campo__entrada"
+						type="search"
+						value={busca}
+						onChange={(e) => alterarBusca(e.target.value)}
+					/>
+				</label>
+			)}
+			{lista.tipo === "Carregada" &&
+				lista.livros.length > 0 &&
+				livrosEncontrados.length === 0 && <p>Nenhum livro encontrado.</p>}
+			{livrosEncontrados.length > 0 && (
 				<ul className="livros">
-					{lista.livros.map((livro) => (
+					{livrosEncontrados.map((livro) => (
 						<li className="livro" key={livro.id}>
 							<div className="livro__texto">
 								<span className="livro__titulo">{livro.titulo}</span>
