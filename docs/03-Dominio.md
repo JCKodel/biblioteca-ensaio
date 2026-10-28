@@ -54,6 +54,7 @@ Identificadores em português, sem acento (docs/04). Ficam em inglês: `Result`,
 | validar livro | `validarLivro(pedido)` | O caso de uso que confere um `CadastroDeLivroPedido`: devolve `DadosDoLivro` ou uma `RecusaDeLivro`. |
 | recusa de livro | `RecusaDeLivro = "TituloInvalido" \| "AutorInvalido" \| "AnoInvalido"` | Os dados do livro não servem. Nada falhou. |
 | livro do catálogo | `LivroDoCatalogo`, `{ id, titulo, autor, ano, totalDeExemplares }` | Um livro como a lista do catálogo o mostra, com quantos exemplares ele tem. |
+| busca no catálogo | `buscarNoCatalogo(livros, busca)`; o campo "Buscar por título ou autor" da tela do catálogo | O caso de uso que filtra a lista do catálogo pelo que a bibliotecária digitou: fica o livro cujo título ou autor contém a busca, aparada, sem diferenciar maiúsculas nem acentos ("memorias" acha "Memórias Póstumas de Brás Cubas", "eca de" acha "Eça de Queirós"). Uma busca vazia deixa a lista inteira. |
 | texto de exemplares | `textoDeExemplares(total)` | O caso de uso que escreve a quantidade de exemplares de um livro: "nenhum exemplar", "1 exemplar", "2 exemplares". |
 | pedido de cadastro de livro | `CadastroDeLivroPedido`, `{ titulo, autor, ano }`, as três strings como foram digitadas | O evento que a tela do catálogo dispara para cadastrar um livro. |
 | pedido de cadastro de exemplar | `CadastroDeExemplarPedido`, `{ livroId }` | O evento que a tela do catálogo dispara para acrescentar um exemplar a um livro. |
