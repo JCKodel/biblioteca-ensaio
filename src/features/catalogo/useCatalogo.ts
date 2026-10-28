@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { chamar, type Resposta } from "../../lib/chamar.ts";
-import type {
-	CadastroDeLivroPedido,
-	LivroDoCatalogo,
-	RecusaDeLivro,
+import {
+	buscarNoCatalogo,
+	type CadastroDeLivroPedido,
+	type LivroDoCatalogo,
+	type RecusaDeLivro,
 } from "./regras.ts";
 
 // O orquestrador do cliente: chama as rotas do catálogo, recarrega a lista
-// depois de cada cadastro e publica o estado que a tela renderiza.
+// depois de cada cadastro, filtra a lista pela busca e publica o estado que a tela renderiza.
 
 export type ListaDoCatalogo =
 	| { tipo: "Carregando" }
@@ -26,6 +27,7 @@ function recusaDe(resposta: Resposta): AvisoDoCatalogo {
 export function useCatalogo() {
 	const [pedido, setPedido] = useState<CadastroDeLivroPedido>(PEDIDO_VAZIO);
 	const [lista, setLista] = useState<ListaDoCatalogo>({ tipo: "Carregando" });
+	const [busca, setBusca] = useState("");
 	const [aviso, setAviso] = useState<AvisoDoCatalogo | null>(null);
 	const [cadastrandoLivro, setCadastrandoLivro] = useState(false);
 	const [livroRecebendoExemplar, setLivroRecebendoExemplar] = useState<
@@ -50,6 +52,10 @@ export function useCatalogo() {
 
 	function alterarCampo(campo: keyof CadastroDeLivroPedido, valor: string) {
 		setPedido((atual) => ({ ...atual, [campo]: valor }));
+	}
+
+	function alterarBusca(valor: string) {
+		setBusca(valor);
 	}
 
 	async function cadastrarLivro() {
@@ -88,13 +94,19 @@ export function useCatalogo() {
 		setLivroRecebendoExemplar(null);
 	}
 
+	const livrosEncontrados =
+		lista.tipo === "Carregada" ? buscarNoCatalogo(lista.livros, busca) : [];
+
 	return {
 		pedido,
 		lista,
+		busca,
+		livrosEncontrados,
 		aviso,
 		cadastrandoLivro,
 		livroRecebendoExemplar,
 		alterarCampo,
+		alterarBusca,
 		cadastrarLivro,
 		adicionarExemplar,
 	};

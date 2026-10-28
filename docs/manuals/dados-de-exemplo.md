@@ -30,6 +30,7 @@ A tabela citável. Os ids são os do banco, porque a carga começa com as tabela
 | Empréstimos | 120 nos últimos 90 dias, pelo menos 30 em cada período de 30 dias: 90 devolvidos no prazo, 18 devolvidos com atraso, 8 abertos no prazo e 4 abertos atrasados |
 | Na tela de empréstimo | 12 empréstimos abertos e 48 exemplares disponíveis |
 | Na tela de atrasos | 4 linhas, nesta ordem: exemplar 26 (Os Sertões), Sofia Campos Ramos, Matrícula 21, "Atrasado há 39 dias"; exemplares 1 (Dom Casmurro) e 20 (O Cortiço), Carla Mendes Rocha, Matrícula 3, "Atrasado há 19 dias", o 1 antes do 20 (emprestados no mesmo dia, o 1 registrado antes); exemplar 34 (Vidas Secas), Lucas Almeida Pereira, Matrícula 12, "Atrasado há 9 dias". O exemplar 46, que vence hoje, não aparece |
+| Na busca do catálogo | "memorias" mostra 2 livros, Memórias de um Sargento de Milícias e Memórias Póstumas de Brás Cubas; "machado", os 4 de Machado de Assis |
 | Abertos atrasados | exemplar 1 (Dom Casmurro) e exemplar 20 (O Cortiço), à matrícula 3, Carla Mendes Rocha, emprestados há 40 dias, atrasados há 19; exemplar 34 (Vidas Secas), à matrícula 12, Lucas Almeida Pereira, há 30 dias, atrasado há 9; exemplar 26 (Os Sertões), à matrícula 21, Sofia Campos Ramos, há 60 dias, atrasado há 39 |
 | Vence hoje | exemplar 46 (A Hora da Estrela), à matrícula 5, Eduarda Nascimento, emprestado há 21 dias: aberto no prazo, não atrasado |
 | Recusados por atraso | matrículas 3 (`emAtraso` 2), 12 e 21 (`emAtraso` 1): "Devolva primeiro os seus livros atrasados." |

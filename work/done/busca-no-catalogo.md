@@ -53,9 +53,31 @@ Pedido de origem: issue #1 do GitHub, "A bibliotecária encontra um livro pelo t
 * Lembrar a busca entre visitas ou na URL: a busca começa vazia a cada vez que a tela abre.
 
 **Pronto quando.**
-* [ ] Os testes unitários de `buscarNoCatalogo` passam, cada um com o nome da regra: acha por trecho do título; acha por trecho do autor; ignora maiúsculas; ignora acentos nos dois lados ("memorias" e "MEMÓRIAS"; "eca" acha "Eça"); apara a busca; busca vazia ou só com espaços devolve a lista inteira; nada combina devolve `[]`; mantém a ordem; um livro que combina por título e autor aparece uma vez; o ano não entra.
-* [ ] Um e2e passa em `/`: com três livros cadastrados pela tela, um deles com acento no título e outro com o autor buscado, digitar um trecho sem acento e em maiúsculas mostra só o do título; digitar parte do autor mostra os dele; digitar algo que não existe mostra "Nenhum livro encontrado."; apagar a busca mostra os três.
-* [ ] `npm run verify` está verde.
-* [ ] Com os dados de exemplo carregados (`npm run dados-de-exemplo`), "memorias" mostra os 2 livros e "machado" os 4 descritos acima, conferidos à mão, como o "Como testar" do pedido.
-* [ ] As capturas `work/done/busca-no-catalogo-390.png` e `-1280.png` conferem com a referência visual.
-* [ ] Desfazer: `git revert -m 1 <merge>`; a entrega não age fora do git.
+* [x] Os testes unitários de `buscarNoCatalogo` passam, cada um com o nome da regra: acha por trecho do título; acha por trecho do autor; ignora maiúsculas; ignora acentos nos dois lados ("memorias" e "MEMÓRIAS"; "eca" acha "Eça"); apara a busca; busca vazia ou só com espaços devolve a lista inteira; nada combina devolve `[]`; mantém a ordem; um livro que combina por título e autor aparece uma vez; o ano não entra.
+* [x] Um e2e passa em `/`: com três livros cadastrados pela tela, um deles com acento no título e outro com o autor buscado, digitar um trecho sem acento e em maiúsculas mostra só o do título; digitar parte do autor mostra os dele; digitar algo que não existe mostra "Nenhum livro encontrado."; apagar a busca mostra os três.
+* [x] `npm run verify` está verde.
+* [x] Com os dados de exemplo carregados (`npm run dados-de-exemplo`), "memorias" mostra os 2 livros e "machado" os 4 descritos acima, conferidos à mão, como o "Como testar" do pedido.
+* [x] As capturas `work/done/busca-no-catalogo-390.png` e `-1280.png` conferem com a referência visual.
+* [x] Desfazer: `git revert -m 1 <merge>`; a entrega não age fora do git.
+
+## O que aconteceu
+
+* **Construído como o Contrato diz.** `buscarNoCatalogo` e o `normalizado` privado em `regras.ts`; `useCatalogo` ganhou `busca`, `alterarBusca` e `livrosEncontrados`; a `TelaDeCatalogo` mostra o campo só com a lista carregada e não vazia, e "Nenhum livro encontrado." quando nada combina. Nenhuma rota, SQL nem migração mudou; a fatia não ganhou arquivo, então o docs/01 não muda.
+* **Divergência justificada:** o campo fica fora do `<form>` de cadastro, e `.campo` sozinho não limita a largura. Uma regra nova em `src/estilo.css`, `.catalogo__busca`, dá `max-width: var(--largura-do-formulario)` e o espaço até a lista. Nenhuma variável nova, então a tabela do docs/04 não muda.
+* **Efeito nos ponta a ponta antigos:** o rótulo "Buscar por título ou autor" contém "título" e "autor", e o `getByLabel("Título")` do `e2e/catalogo.spec.ts` passou a achar dois campos. Os localizadores de "Título" e "Autor" agora usam `{ exact: true }`. Nenhuma outra spec procura esses rótulos.
+* **Testes:** os 10 unitários de `buscarNoCatalogo`, com os nomes das regras do Pronto quando, em `regras.test.ts`; o e2e novo em `e2e/busca.spec.ts`, com um código único nos livros porque os dois projetos gravam no mesmo servidor. Nada vai para testes lentos.
+* **Prova:** com `npm run dados-de-exemplo` num banco novo deste worktree e o `npm run dev` rodando, cada exemplo do Comportamento foi conferido no navegador pelo Playwright: "memorias", "MEMÓRIAS" e "Memorias" dão os 2 livros; "sertoes" dá Os Sertões e "sertão" Grande Sertão: Veredas; "machado" e "assis" dão os 4 de Machado de Assis; "alencar" os 4 de José de Alencar; "eça de" e "eca de" os 3 de Eça de Queirós, e "eca" esses 3 mais Vidas Secas; "cubas" um; "  machado " e "de assis" os 4; "machado assis" e "1899" mostram "Nenhum livro encontrado."; só espaços mostra os 30. As capturas `busca-no-catalogo-390.png` e `-1280.png`, com "machado" digitado, conferem com `catalogo-*.png`: o campo como os do formulário, a lista igual, sem rolagem horizontal em 390.
+* **Revisão da entrega:** um agente somente leitura leu o diff contra a página e não achou defeito. Duas observações menores foram corrigidas: o teste "mantém a ordem" buscava "a", que não tirava nenhum livro, e agora busca "de", que tira um; `alterarBusca` era o setter do React exposto, e agora é uma função própria, como o Contrato escreve. Verify verde de novo depois.
+* **Documentos:** docs/03 já tinha o termo (do /propose); docs/04 §Estilo visual lista as capturas novas; `docs/manuals/dados-de-exemplo.md` ganhou a linha "Na busca do catálogo".
+
+```commit
+Busca no catálogo por título ou autor (busca-no-catalogo)
+
+- buscarNoCatalogo filtra por trecho, sem acento nem maiúscula
+- campo "Buscar por título ou autor" filtra a lista a cada tecla
+- "Nenhum livro encontrado." quando nada combina
+- e2e da busca; os do catálogo acham "Título" e "Autor" exatos
+- capturas novas no docs/04 e linha da busca nos dados de exemplo
+
+work/done/busca-no-catalogo.md
+```

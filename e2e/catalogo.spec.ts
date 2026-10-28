@@ -15,13 +15,13 @@ test("cadastrar um livro e acrescentar dois exemplares mostra 2 exemplares", asy
 }) => {
 	const titulo = tituloUnico("Dom Casmurro");
 	await page.goto("/");
-	await page.getByLabel("Título").fill(titulo);
-	await page.getByLabel("Autor").fill("Machado de Assis");
+	await page.getByLabel("Título", { exact: true }).fill(titulo);
+	await page.getByLabel("Autor", { exact: true }).fill("Machado de Assis");
 	await page.getByRole("button", { name: "Cadastrar livro" }).click();
 
 	const linha = linhaDoLivro(page, titulo);
 	await expect(linha).toContainText("nenhum exemplar");
-	await expect(page.getByLabel("Título")).toHaveValue("");
+	await expect(page.getByLabel("Título", { exact: true })).toHaveValue("");
 
 	const adicionar = linha.getByRole("button", { name: "Adicionar exemplar" });
 	await adicionar.click();
@@ -34,14 +34,16 @@ test("um título em branco mostra a recusa e guarda o que foi digitado", async (
 	page,
 }) => {
 	await page.goto("/");
-	await page.getByLabel("Título").fill("   ");
-	await page.getByLabel("Autor").fill("Autor sem título");
+	await page.getByLabel("Título", { exact: true }).fill("   ");
+	await page.getByLabel("Autor", { exact: true }).fill("Autor sem título");
 	await page.getByRole("button", { name: "Cadastrar livro" }).click();
 
 	await expect(page.getByRole("alert")).toHaveText(
 		"Informe o título, com até 200 caracteres.",
 	);
-	await expect(page.getByLabel("Autor")).toHaveValue("Autor sem título");
+	await expect(page.getByLabel("Autor", { exact: true })).toHaveValue(
+		"Autor sem título",
+	);
 });
 
 test("uma falha do servidor ao listar mostra a mensagem de Falhou", async ({
